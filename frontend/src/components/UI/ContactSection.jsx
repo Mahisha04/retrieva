@@ -42,8 +42,8 @@ const socials = [
 export default function ContactSection() {
   return (
     <footer className="bg-white border-t border-gray-200 mt-16" id="contact">
-      <div className="w-full px-6 py-12 flex flex-col lg:flex-row gap-10 items-start">
-        <form className="w-full max-w-md bg-gray-50 rounded-2xl p-6 shadow-sm space-y-4 order-2 lg:order-1">
+      <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col lg:flex-row gap-10 items-start">
+        <form className="w-full max-w-md bg-gray-50 rounded-2xl p-6 shadow-sm space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Your Name</label>
             <input type="text" className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter name" />
@@ -58,7 +58,7 @@ export default function ContactSection() {
           </div>
           <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition">Submit</button>
         </form>
-        <div className="order-1 lg:order-2 flex-1">
+        <div className="w-full lg:flex-1">
           <h2 className="text-2xl font-bold text-gray-900 tracking-wide">CONTACT FORM</h2>
           <p className="mt-2 text-sm text-gray-600 max-w-md">
             If there is something you want to suggest or you simply want to say hello, feel free to reach out. We'll follow up quickly.
@@ -66,9 +66,20 @@ export default function ContactSection() {
         </div>
       </div>
       <div className="border-t border-gray-100 py-6 text-center text-sm text-gray-500">
-        <p>
-          Created with <span className="text-red-500">♥</span> using MERN by <span className="font-semibold">Team Retrieva</span> · All rights reserved.
-        </p>
+        <div className="flex justify-center gap-4">
+          {socials.map((social) => (
+            <a
+              key={`footer-${social.label}`}
+              href={social.href}
+              className="p-2 rounded-full border border-gray-200 hover:border-gray-400 hover:text-gray-900 transition"
+              aria-label={social.label}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {social.icon}
+            </a>
+          ))}
+        </div>
       </div>
     </footer>
   );

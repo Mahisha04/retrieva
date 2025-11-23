@@ -9,14 +9,9 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
 
   return (
     <div className="flex justify-between items-center px-10 py-5 bg-white shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
-          R
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-wide text-[#0f1a3c]">Retrieva</h1>
-          <p className="text-base text-gray-600">Cloud Lost &amp; Found System</p>
-        </div>
+      <div className="flex flex-col">
+        <h1 className="text-2xl font-extrabold tracking-wide text-[#0b1a4a]">Retrieva</h1>
+        <p className="text-base text-gray-600">Cloud Lost &amp; Found System</p>
       </div>
 
       <div className="flex items-center gap-3">
