@@ -1,0 +1,127 @@
+import React, { useState } from "react";
+
+export default function VerifyModal({ item, onClose, mode = 'claimer', user = null }) {
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const finderContact = (user && user.email) || 'anonymous';
+  const question = item?.security_question || "Security question";
+
+  async function submitAnswer(e) {
+    e && e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    try {
+      if (mode === 'finder') {
+        const payload = {
+          itemId: item.id,
+          finderContact,
+          finderName: (user && user.name) || null,
+          securityAnswer: answer,
+          finderAnswer: answer,
+        };
+        const res = await fetch('http://localhost:5000/claims', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setResult({ ok: false, error: data.error || 'Failed to create request' });
+        } else {
+          setResult({ ok: true, pending: true });
+        }
+      } else {
+        const res = await fetch("http://localhost:5000/verify-answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.id, answer }),
+        });
+        const data = await res.json().catch(() => ({ ok: false, error: 'Invalid response' }));
+
+        if (!res.ok || !data.ok) {
+          setResult({ ok: false, error: data.error || 'Verification failed' });
+          return;
+        }
+
+        if (mode === 'claim-owner') {
+          const payload = { answer };
+          const headers = { 'Content-Type': 'application/json' };
+          if (user && user.email) headers['X-User-Email'] = user.email;
+          const r3 = await fetch(`http://localhost:5000/items/${item.id}/claim-ownership`, { method: 'POST', headers, body: JSON.stringify(payload) });
+          const j3 = await r3.json().catch(()=>({}));
+          if (r3.ok && j3.ok) setResult({ ok: true, claimed: true });
+          else setResult({ ok: false, error: j3.error || 'Claim failed' });
+        } else {
+          setResult({ ok: true });
+        }
+      }
+    } catch (err) {
+      setResult({ ok: false, error: err.message || String(err) });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">{mode === 'finder' ? 'I found this' : (mode === 'claim-owner' ? 'Prove Ownership' : 'Claim Item')}</h3>
+          <button onClick={onClose} className="text-gray-500">✕</button>
+        </div>
+
+        <p className="mt-3 text-sm text-gray-700">{question}</p>
+
+        <form onSubmit={submitAnswer} className="mt-4">
+          <input
+            className="w-full border rounded px-3 py-2"
+            placeholder="Enter Answer"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            required
+          />
+
+          <div className="mt-4 flex items-center gap-3 justify-end">
+            <button type="button" className="px-4 py-2 border rounded" onClick={onClose}>Close</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>
+              {loading ? "Checking..." : 'Submit'}
+            </button>
+          </div>
+        </form>
+
+        {result && (
+          <div className={`mt-4 p-3 rounded ${result.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+            {result.ok
+              ? (result.pending ? 'Request sent to the owner for approval.' : 'Answer verified successfully.')
+              : `Unable to submit${result.error ? ': ' + result.error : ''}`}
+
+            {result.ok && result.pending && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+                  onClick={() => {
+                    onClose();
+                    window.location.hash = '#finder-responses';
+                  }}
+                >
+                  Responses
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded"
+                  onClick={onClose}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

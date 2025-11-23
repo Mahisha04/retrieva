@@ -1,0 +1,18 @@
+[Unit]
+Description=Retrieva API (Express)
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/retrieva/backend
+ExecStart=/usr/bin/node server.js
+Environment=NODE_ENV=production
+Environment=PORT=5000
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+StandardOutput=append:/var/log/retrieva-backend.log
+StandardError=append:/var/log/retrieva-backend-error.log
+
+[Install]
+WantedBy=multi-user.target
