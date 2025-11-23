@@ -42,7 +42,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [tab]);
 
   useEffect(() => {
-    fetch(`${API}/items`)
+    fetch(API.url('/items'))
       .then((res) => res.json())
       .then((data) => setItems(data));
   }, []);
@@ -423,7 +423,7 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
           normalizedOwnedIds.forEach((id) => params.append('itemIds', id));
         }
         const suffix = params.toString() ? `?${params.toString()}` : '';
-        const res = await fetch(`http://localhost:5000/claims${suffix}`);
+        const res = await fetch(API.url(`/claims${suffix}`));
         const data = await res.json();
         setClaims((data || []).filter(c => c.status === 'pending'));
       } catch (e) {
@@ -440,7 +440,7 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
         const digits = ownerPhone.toString().replace(/\D+/g, '');
         if (digits) payload.ownerPhone = digits;
       }
-      const res = await fetch(`http://localhost:5000/claims/${claimId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await fetch(API.url(`/claims/${claimId}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'failed');
       setClaims(prev => prev.filter(c => c.id !== claimId));
@@ -530,7 +530,7 @@ function FinderClaims({ finderContact }) {
     }
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/claims?finderContact=${encodeURIComponent(finderContact)}`);
+      const res = await fetch(API.url(`/claims?finderContact=${encodeURIComponent(finderContact)}`));
       const data = await res.json();
       setClaims(Array.isArray(data) ? data : []);
     } catch (e) {

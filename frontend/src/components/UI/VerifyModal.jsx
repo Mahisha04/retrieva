@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API } from "../../config";
 
 export default function VerifyModal({ item, onClose, mode = 'claimer', user = null }) {
   const [answer, setAnswer] = useState("");
@@ -21,7 +22,7 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
           securityAnswer: answer,
           finderAnswer: answer,
         };
-        const res = await fetch('http://localhost:5000/claims', {
+        const res = await fetch(API.url('/claims'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -33,7 +34,7 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
           setResult({ ok: true, pending: true });
         }
       } else {
-        const res = await fetch("http://localhost:5000/verify-answer", {
+        const res = await fetch(API.url('/verify-answer'), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: item.id, answer }),
@@ -49,7 +50,7 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
           const payload = { answer };
           const headers = { 'Content-Type': 'application/json' };
           if (user && user.email) headers['X-User-Email'] = user.email;
-          const r3 = await fetch(`http://localhost:5000/items/${item.id}/claim-ownership`, { method: 'POST', headers, body: JSON.stringify(payload) });
+          const r3 = await fetch(API.url(`/items/${item.id}/claim-ownership`), { method: 'POST', headers, body: JSON.stringify(payload) });
           const j3 = await r3.json().catch(()=>({}));
           if (r3.ok && j3.ok) setResult({ ok: true, claimed: true });
           else setResult({ ok: false, error: j3.error || 'Claim failed' });

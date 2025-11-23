@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { API } from "../config";
 
 function ItemList() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/items")
+    fetch(API.url('/items'))
       .then((res) => res.json())
       .then((data) => {
         console.log("Loaded items:", data);
