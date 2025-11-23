@@ -7,6 +7,7 @@ import HowItWorks from "./components/UI/HowItWorks";
 import ContactSection from "./components/UI/ContactSection";
 import ProjectInspiration from "./components/UI/ProjectInspiration";
 import React from 'react';
+import { BASE_API } from "./config";
 
 export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActiveTab }) {
   const [items, setItems] = useState([]);
@@ -41,7 +42,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [tab]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/items")
+    fetch('${BASE_API}/items')
       .then((res) => res.json())
       .then((data) => setItems(data));
   }, []);
