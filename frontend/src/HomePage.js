@@ -464,10 +464,12 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
         const answerMismatched = c.answerIsCorrect === false;
 
         const handleApprove = () => {
-          if (answerMismatched) {
-            const confirmed = window.confirm('The finder answer does not match your stored answer. Approve anyway?');
-            if (!confirmed) return;
-          }
+          doAction(c.id, 'approve');
+        };
+
+        const handleOverride = () => {
+          const confirmed = window.confirm('Answer mismatch detected. Approve anyway and share your contact details with this finder?');
+          if (!confirmed) return;
           doAction(c.id, 'approve');
         };
         return (
@@ -486,7 +488,7 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                 )}
                 {answerMismatched && (
                   <div className="text-xs text-red-600 mt-1">
-                    Does not match your stored answer. If you still know the finder, you can override below.
+                    Does not match your stored answer. Use the override control below only if you personally verified the finder.
                   </div>
                 )}
               </div>
@@ -509,11 +511,21 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                       No
                     </button>
                     <button
-                      className="px-4 py-1.5 rounded font-semibold bg-blue-600 text-white"
-                      onClick={handleApprove}
+                      className={`px-4 py-1.5 rounded font-semibold ${answerMismatched ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white'}`}
+                      onClick={() => !answerMismatched && handleApprove()}
+                      disabled={answerMismatched}
                     >
                       Yes
                     </button>
+                    {answerMismatched && (
+                      <button
+                        className="px-4 py-1.5 rounded font-semibold border border-red-300 text-red-600"
+                        onClick={handleOverride}
+                        type="button"
+                      >
+                        Override
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
