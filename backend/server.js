@@ -637,7 +637,7 @@ app.post("/verify-answer", async (req, res) => {
     }
 
     if (!data || !data.security_answer) {
-      return res.status(404).json({ ok: false, error: "no_security" });
+      return res.json({ ok: true, warning: 'no_security_configured' });
     }
 
     // Normalize incoming answer for comparison
