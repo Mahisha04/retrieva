@@ -40,6 +40,17 @@ const socials = [
 ];
 
 export default function ContactSection() {
+  const emailInputId = 'contact-email-input';
+
+  const focusEmailField = (event) => {
+    event.preventDefault();
+    const input = document.getElementById(emailInputId);
+    if (input) {
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      input.focus();
+    }
+  };
+
   return (
     <footer className="bg-white border-t border-gray-200 mt-16" id="contact">
       <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col lg:flex-row gap-10 items-start">
@@ -50,7 +61,7 @@ export default function ContactSection() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Email address</label>
-            <input type="email" className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter email" />
+            <input id={emailInputId} type="email" className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter email" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Message</label>
@@ -63,10 +74,12 @@ export default function ContactSection() {
           <p className="mt-2 text-sm text-gray-600 max-w-md">
             If there is something you want to suggest or you simply want to say hello, feel free to reach out. We'll follow up quickly.
           </p>
-          <div className="mt-4 text-sm text-gray-700 space-y-1">
+          <div className="mt-4 text-sm text-gray-700 space-y-2">
             <p>Email us directly:</p>
-            <a href="mailto:mahisha04@gmail.com" className="text-indigo-600 hover:underline">mahisha04@gmail.com</a>
-            <a href="mailto:aaditi2226@gmail.com" className="text-indigo-600 hover:underline">aaditi2226@gmail.com</a>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+              <a href={`#${emailInputId}`} onClick={focusEmailField} className="text-indigo-600 hover:underline">mahisha04@gmail.com</a>
+              <a href={`#${emailInputId}`} onClick={focusEmailField} className="text-indigo-600 hover:underline">aaditi2226@gmail.com</a>
+            </div>
           </div>
         </div>
       </div>
