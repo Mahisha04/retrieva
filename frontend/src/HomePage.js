@@ -674,6 +674,21 @@ function FinderClaims({ finderContact }) {
   const [claims, setClaims] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
 
+  const formatPhone = React.useCallback((value) => {
+    if (!value) return null;
+    const digits = value.toString().replace(/\D+/g, '');
+    if (digits.length === 10) {
+      return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    if (digits.length === 11 && digits.startsWith('1')) {
+      return `+${digits[0]} ${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length === 12 && digits.startsWith('91')) {
+      return `+${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    }
+    return digits || value;
+  }, []);
+
   const loadClaims = useCallback(async () => {
     if (!finderContact) {
       setClaims([]);
@@ -719,7 +734,8 @@ function FinderClaims({ finderContact }) {
         <div className="space-y-3">
           {claims.map((c) => {
             const finderAnswer = c.finderAnswer ?? c.finder_answer ?? c.answer ?? c.answer_text ?? c.securityAnswer ?? c.response ?? null;
-            const ownerContact = c.ownerContactLabel || c.ownerContact || c.ownerPhone || c.ownerEmail || null;
+            const ownerPhoneFormatted = formatPhone(c.ownerPhone || c.ownerPhoneDigits || null);
+            const ownerEmail = c.ownerEmail || null;
             const proofPhotoUrl = c.proofPhotoUrl || c.proof_photo_url || null;
             return (
               <div key={c.id} className="p-3 rounded-lg border bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -749,7 +765,15 @@ function FinderClaims({ finderContact }) {
                   {c.status === 'approved' && (
                     <div className="mt-3 p-3 rounded border border-green-200 bg-white text-gray-900">
                       <div className="text-xs uppercase text-gray-500">Contact the Owner</div>
-                      <div className="text-sm font-semibold text-green-800 mt-1">{ownerContact || 'Owner contact unavailable'}</div>
+                      {ownerPhoneFormatted ? (
+                        <div className="text-base font-semibold text-green-800 mt-1">{ownerPhoneFormatted}</div>
+                      ) : null}
+                      {ownerEmail ? (
+                        <div className="text-sm text-green-900 mt-1">{ownerEmail}</div>
+                      ) : null}
+                      {!ownerPhoneFormatted && !ownerEmail && (
+                        <div className="text-sm text-gray-700 mt-1">Owner contact unavailable.</div>
+                      )}
                       <div className="text-xs text-gray-500 mt-1">Use this info to coordinate pickup.</div>
                     </div>
                   )}
