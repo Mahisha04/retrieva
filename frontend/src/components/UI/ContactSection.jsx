@@ -80,6 +80,9 @@ export default function ContactSection() {
             </a>
           ))}
         </div>
+        <p className="mt-4 text-xs text-gray-400 uppercase tracking-widest">
+          © 2025 Retrieva. All rights reserved.
+        </p>
       </div>
     </footer>
   );
