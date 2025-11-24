@@ -8,7 +8,7 @@ import ContactSection from "./components/UI/ContactSection";
 import ProjectInspiration from "./components/UI/ProjectInspiration";
 import React from 'react';
 import {API}from "./config";
-import fallbackItems from "../items.json";
+import fallbackItems from "./data/items.json";
 
 export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActiveTab }) {
   const [items, setItems] = useState([]);
