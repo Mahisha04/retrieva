@@ -42,7 +42,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [tab]);
 
   useEffect(() => {
-    fetch(API.url('/items'))
+    fetch(`${API}/items`)
       .then((res) => res.json())
       .then((data) => setItems(data));
   }, []);
@@ -460,7 +460,16 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
         const linkedItem = itemLookup.get(String(c.itemId ?? c.item_id ?? '')) || null;
         const question = c.securityQuestion || linkedItem?.security_question || linkedItem?.securityQuestion || 'No security question was set for this item.';
         const finderAnswer = c.finderAnswer ?? c.finder_answer ?? c.answer ?? c.answer_text ?? c.securityAnswer ?? c.response ?? null;
-        const canApprove = c.answerIsCorrect !== false;
+        const answerMatches = c.answerIsCorrect === true;
+        const answerMismatched = c.answerIsCorrect === false;
+
+        const handleApprove = () => {
+          if (answerMismatched) {
+            const confirmed = window.confirm('The finder answer does not match your stored answer. Approve anyway?');
+            if (!confirmed) return;
+          }
+          doAction(c.id, 'approve');
+        };
         return (
           <div key={c.id} className="p-4 border rounded-xl bg-white shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Your Question</div>
@@ -472,11 +481,13 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                 <div className="text-base font-semibold text-gray-900 whitespace-pre-line">
                   {finderAnswer?.trim() ? finderAnswer : 'Finder did not provide an answer.'}
                 </div>
-                {c.answerIsCorrect === true && (
+                {answerMatches && (
                   <div className="text-xs text-green-600 mt-1">Matches the answer you provided.</div>
                 )}
-                {c.answerIsCorrect === false && (
-                  <div className="text-xs text-red-600 mt-1">Does not match your stored answer. Approval disabled.</div>
+                {answerMismatched && (
+                  <div className="text-xs text-red-600 mt-1">
+                    Does not match your stored answer. If you still know the finder, you can override below.
+                  </div>
                 )}
               </div>
               <div className="px-4 py-3 border-b flex items-center justify-between">
@@ -498,9 +509,8 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                       No
                     </button>
                     <button
-                      className={`px-4 py-1.5 rounded font-semibold ${canApprove ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
-                      onClick={() => canApprove && doAction(c.id, 'approve')}
-                      disabled={!canApprove}
+                      className="px-4 py-1.5 rounded font-semibold bg-blue-600 text-white"
+                      onClick={handleApprove}
                     >
                       Yes
                     </button>
