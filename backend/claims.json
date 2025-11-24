@@ -136,8 +136,9 @@
     "finderContact": "mahisha123@gmail.com",
     "finderName": "Mahisha",
     "finderAnswer": "Keychain has panda charm",
-    "status": "pending",
-    "createdAt": "2025-11-23T04:56:00.251Z"
+    "status": "rejected",
+    "createdAt": "2025-11-23T04:56:00.251Z",
+    "actedAt": "2025-11-23T14:57:35.347Z"
   },
   {
     "id": 1763875239772,
@@ -148,8 +149,9 @@
     "finderContact": "aaditi2226@gmail.com",
     "finderName": "Aaditi",
     "finderAnswer": "Case has floral sticker",
-    "status": "pending",
-    "createdAt": "2025-11-23T05:20:39.773Z"
+    "status": "rejected",
+    "createdAt": "2025-11-23T05:20:39.773Z",
+    "actedAt": "2025-11-23T14:57:33.749Z"
   },
   {
     "id": 1763882503233,
@@ -241,8 +243,9 @@
     "ownerPhone": null,
     "finderContact": "mamatha123@gmail.com",
     "finderName": "Mamatha A",
-    "status": "pending",
-    "createdAt": "2025-11-23T09:17:50.991Z"
+    "status": "rejected",
+    "createdAt": "2025-11-23T09:17:50.991Z",
+    "actedAt": "2025-11-23T14:54:26.413Z"
   },
   {
     "id": 1763890914037,
@@ -252,8 +255,9 @@
     "ownerPhone": null,
     "finderContact": "mamatha123@gmail.com",
     "finderName": "Mamatha A",
-    "status": "pending",
-    "createdAt": "2025-11-23T09:41:54.037Z"
+    "status": "rejected",
+    "createdAt": "2025-11-23T09:41:54.037Z",
+    "actedAt": "2025-11-23T14:57:48.671Z"
   },
   {
     "id": 1763891367005,
@@ -263,7 +267,72 @@
     "ownerPhone": null,
     "finderContact": "mamatha123@gmail.com",
     "finderName": "Mamatha A",
-    "status": "pending",
-    "createdAt": "2025-11-23T09:49:27.005Z"
+    "status": "rejected",
+    "createdAt": "2025-11-23T09:49:27.005Z",
+    "actedAt": "2025-11-23T14:54:22.923Z"
+  },
+  {
+    "id": 1763909821058,
+    "itemId": 27,
+    "itemName": "keys",
+    "ownerEmail": "mahisha23@gmail.com",
+    "ownerPhone": "23",
+    "finderContact": "mamatha123@gmail.com",
+    "finderName": "Mamatha A",
+    "finderAnswer": "dog",
+    "answerIsCorrect": false,
+    "answerCheckedAt": "2025-11-23T14:57:01.059Z",
+    "securityQuestion": "keychain",
+    "status": "rejected",
+    "createdAt": "2025-11-23T14:57:01.059Z",
+    "actedAt": "2025-11-23T14:57:57.568Z"
+  },
+  {
+    "id": 1763909896334,
+    "itemId": 27,
+    "itemName": "keys",
+    "ownerEmail": "mahisha23@gmail.com",
+    "ownerPhone": "23",
+    "finderContact": "mamatha123@gmail.com",
+    "finderName": "Mamatha A",
+    "finderAnswer": "ganesh",
+    "answerIsCorrect": false,
+    "answerCheckedAt": "2025-11-23T14:58:16.334Z",
+    "securityQuestion": "keychain",
+    "status": "rejected",
+    "createdAt": "2025-11-23T14:58:16.334Z",
+    "actedAt": "2025-11-23T14:59:20.795Z"
+  },
+  {
+    "id": 1763909941833,
+    "itemId": 27,
+    "itemName": "keys",
+    "ownerEmail": "mahisha23@gmail.com",
+    "ownerPhone": "23",
+    "finderContact": "mamatha123@gmail.com",
+    "finderName": "Mamatha A",
+    "finderAnswer": "doggy",
+    "answerIsCorrect": false,
+    "answerCheckedAt": "2025-11-23T14:59:01.833Z",
+    "securityQuestion": "keychain",
+    "status": "rejected",
+    "createdAt": "2025-11-23T14:59:01.833Z",
+    "actedAt": "2025-11-23T14:59:19.581Z"
+  },
+  {
+    "id": 1763909994399,
+    "itemId": 27,
+    "itemName": "keys",
+    "ownerEmail": "mahisha23@gmail.com",
+    "ownerPhone": "9916119828",
+    "finderContact": "mamatha123@gmail.com",
+    "finderName": "Mamatha A",
+    "finderAnswer": "doggy",
+    "answerIsCorrect": true,
+    "answerCheckedAt": "2025-11-23T14:59:54.399Z",
+    "securityQuestion": "keychain",
+    "status": "approved",
+    "createdAt": "2025-11-23T14:59:54.399Z",
+    "actedAt": "2025-11-23T15:01:31.757Z"
   }
 ]
