@@ -355,28 +355,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
           </div>
 
           <div className="mt-6 space-y-6">
-            {tab === 'feed' && (
-              <div id="feed-overview" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <h3 className="text-xl font-semibold mb-2">Dashboard Overview</h3>
-                <p className="text-sm text-gray-600">
-                  Use the navigation bar to open the <strong>Lost</strong> or <strong>Found</strong> boxes. Keeping the feed clear makes it easy to decide which portal you need.
-                </p>
-                <div className="mt-4 grid gap-4 md:grid-cols-3 text-sm text-gray-500">
-                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                    <div className="text-xs uppercase text-gray-400">Total Listings</div>
-                    <div className="text-2xl font-semibold text-gray-900">{items.length}</div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                    <div className="text-xs uppercase text-gray-400">Lost Items</div>
-                    <div className="text-2xl font-semibold text-gray-900">{lostItems.length}</div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                    <div className="text-xs uppercase text-gray-400">Found Items</div>
-                    <div className="text-2xl font-semibold text-gray-900">{foundItems.length}</div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {tab === 'feed' && null}
 
             {tab === 'lost-board' && (
               <div id="lost-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
