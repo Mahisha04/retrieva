@@ -401,20 +401,28 @@ app.post("/add-item", upload.single("image"), async (req, res) => {
 });
 
 // ------------------ CLAIMS: create a persistent claim request ------------------
-// POST /claims { itemId, finderContact }
-app.post('/claims', async (req, res) => {
+// POST /claims with multipart payload (finder answer + proof photo)
+app.post('/claims', upload.single('proofPhoto'), async (req, res) => {
   try {
-    const { itemId, finderContact, finderName } = req.body || {};
+    const body = req.body || {};
+    const itemId = Number(body.itemId || body.item_id);
+    const finderContact = body.finderContact || body.finder_contact || null;
+    const finderName = body.finderName || body.finder_name || null;
     if (!itemId) return res.status(400).json({ error: 'missing_itemId' });
 
+    const proofFile = req.file || null;
+    if (!proofFile) {
+      return res.status(400).json({ error: 'missing_proof_photo' });
+    }
+
     const rawAnswerSource =
-      req.body?.finderAnswer ??
-      req.body?.finder_answer ??
-      req.body?.securityAnswer ??
-      req.body?.security_answer ??
-      req.body?.answer ??
-      req.body?.answer_text ??
-      req.body?.response ??
+      body?.finderAnswer ??
+      body?.finder_answer ??
+      body?.securityAnswer ??
+      body?.security_answer ??
+      body?.answer ??
+      body?.answer_text ??
+      body?.response ??
       '';
     const finderAnswerClean = rawAnswerSource === null || rawAnswerSource === undefined
       ? ''
@@ -441,16 +449,40 @@ app.post('/claims', async (req, res) => {
       }
     }
 
+    // Upload proof photo to Supabase storage
+    let proofPhotoUrl = null;
+    let proofStoragePath = null;
+    if (proofFile && proofFile.buffer) {
+      const safeName = (proofFile.originalname || 'proof.jpg').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      proofStoragePath = `proofs/${Date.now()}-${safeName}`;
+      const { error: proofErr } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(proofStoragePath, proofFile.buffer, {
+          contentType: proofFile.mimetype || 'image/jpeg',
+          upsert: false,
+        });
+      if (proofErr) {
+        console.log('⚠️ proof upload error', proofErr);
+        return res.status(500).json({ error: 'proof_upload_failed' });
+      }
+      const { data: proofUrlData } = supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(proofStoragePath);
+      proofPhotoUrl = proofUrlData?.publicUrl || null;
+    }
+
     const claims = readClaims();
     const id = Date.now();
     const ownerContactRaw = item.contact || null;
     const ownerPhoneCandidate = item.owner_phone || item.contact_phone || null;
+    const ownerContactDisplay = ownerContactRaw || ownerPhoneCandidate || null;
     const claim = {
       id,
       itemId: itemId,
       itemName: item.name || null,
       ownerEmail: ownerContactRaw,
       ownerPhone: normalizeContactPhone(ownerContactRaw) || ownerPhoneCandidate,
+      ownerContactLabel: ownerContactDisplay,
       finderContact: finderContact || null,
       finderName: finderName || null,
       finderAnswer: trimmedFinderAnswer || finderAnswerClean || null,
@@ -458,6 +490,9 @@ app.post('/claims', async (req, res) => {
       answerCheckedAt: normalizedFinderAnswer ? new Date().toISOString() : null,
       securityQuestion: item.security_question || null,
       status: 'pending',
+      proofPhotoUrl: proofPhotoUrl,
+      proofStoragePath,
+      proofUploadedAt: proofPhotoUrl ? new Date().toISOString() : null,
       createdAt: new Date().toISOString(),
     };
     claims.push(claim);

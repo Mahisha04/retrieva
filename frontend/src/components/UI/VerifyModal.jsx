@@ -5,6 +5,8 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [proofFile, setProofFile] = useState(null);
+  const [formError, setFormError] = useState(null);
 
   const finderContact = (user && user.email) || 'anonymous';
   const question = item?.security_question || "Security question";
@@ -13,30 +15,37 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
     'claim-owner': "Answer the question you originally set so we know it's your listing.",
     claimer: "Double-check your answer—owners use it to verify you before sharing contact details."
   };
-  const submitCopy = mode === 'finder' ? 'Submit to Owner' : 'Submit Answer';
+  const submitCopy = mode === 'finder' ? 'Submit Proof' : 'Submit Answer';
+  const isFinderMode = mode === 'finder';
 
   async function submitAnswer(e) {
     e && e.preventDefault();
     setLoading(true);
     setResult(null);
+    setFormError(null);
     try {
-      if (mode === 'finder') {
-        const payload = {
-          itemId: item.id,
-          finderContact,
-          finderName: (user && user.name) || null,
-          securityAnswer: answer,
-          finderAnswer: answer,
-        };
+      if (isFinderMode) {
+        if (!proofFile) {
+          setFormError('Please upload a proof photo before submitting.');
+          setLoading(false);
+          return;
+        }
+        const formData = new FormData();
+        formData.append('itemId', item.id);
+        formData.append('finderContact', finderContact);
+        if (user && user.name) formData.append('finderName', user.name);
+        formData.append('finderAnswer', answer);
+        formData.append('securityAnswer', answer);
+        formData.append('proofPhoto', proofFile);
         const res = await fetch(API.url('/claims'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: formData,
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           setResult({ ok: false, error: data.error || 'Failed to create request' });
         } else {
+          setProofFile(null);
           setResult({ ok: true, pending: true });
         }
       } else {
@@ -83,6 +92,24 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
         <p className="text-xs text-gray-500 mt-1">{helperCopy[mode] || helperCopy.claimer}</p>
 
         <form onSubmit={submitAnswer} className="mt-4">
+          {isFinderMode && (
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700" htmlFor="proof-photo">Proof Photo Upload</label>
+              <input
+                id="proof-photo"
+                type="file"
+                accept="image/*"
+                className="mt-2 w-full border rounded px-3 py-2"
+                onChange={(e) => {
+                  const file = e.target.files && e.target.files[0];
+                  setProofFile(file || null);
+                }}
+                required={false}
+              />
+              <p className="text-xs text-gray-500 mt-1">Attach a quick photo of the item to help the owner confirm.</p>
+            </div>
+          )}
+
           <label className="text-sm font-medium text-gray-700" htmlFor="security-answer">Security Question Answer</label>
           <input
             id="security-answer"
@@ -100,6 +127,10 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
             </button>
           </div>
         </form>
+
+        {formError && (
+          <div className="mt-3 text-sm text-red-600">{formError}</div>
+        )}
 
         {result && (
           <div className={`mt-4 p-3 rounded ${result.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>

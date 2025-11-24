@@ -581,6 +581,7 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [],
         const itemLocation = linkedItem?.location || 'No location noted';
         const itemDescription = linkedItem?.description || 'No description provided.';
         const itemImage = linkedItem?.image_url || null;
+        const proofPhotoUrl = c.proofPhotoUrl || c.proof_photo_url || null;
 
         return (
           <div key={c.id} className="p-4 border rounded-xl bg-white shadow-sm">
@@ -642,6 +643,23 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [],
               </div>
             </div>
 
+            {proofPhotoUrl && (
+              <div className="mt-4">
+                <div className="text-xs uppercase text-gray-500 mb-1">Proof Photo</div>
+                <div className="rounded-lg border bg-gray-50 p-3 flex flex-col gap-2">
+                  <img src={proofPhotoUrl} alt={`Proof for ${itemName}`} className="w-full max-h-64 object-cover rounded" />
+                  <a
+                    href={proofPhotoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Open full size
+                  </a>
+                </div>
+              </div>
+            )}
+
             <div className="text-xs text-gray-500 mt-2">
               If you approve, we will notify the finder with your contact details.
             </div>
@@ -701,12 +719,19 @@ function FinderClaims({ finderContact }) {
         <div className="space-y-3">
           {claims.map((c) => {
             const finderAnswer = c.finderAnswer ?? c.finder_answer ?? c.answer ?? c.answer_text ?? c.securityAnswer ?? c.response ?? null;
-            const ownerContact = c.ownerPhone || c.ownerEmail || null;
+            const ownerContact = c.ownerContactLabel || c.ownerContact || c.ownerPhone || c.ownerEmail || null;
+            const proofPhotoUrl = c.proofPhotoUrl || c.proof_photo_url || null;
             return (
               <div key={c.id} className="p-3 rounded-lg border bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <div className="font-semibold text-gray-900">{c.itemName || `Item #${c.itemId}`}</div>
                   <div className="text-sm text-gray-600 capitalize">Status: {c.status}</div>
+                  {proofPhotoUrl && (
+                    <div className="mt-2">
+                      <div className="text-xs uppercase text-gray-500">Proof Photo</div>
+                      <img src={proofPhotoUrl} alt="Proof" className="mt-1 w-40 h-24 object-cover rounded border" />
+                    </div>
+                  )}
                 </div>
                 <div className="text-sm text-gray-600">
                   <div>Requested: {new Date(c.createdAt).toLocaleString()}</div>
