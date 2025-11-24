@@ -488,12 +488,6 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
         const handleApprove = () => {
           doAction(c.id, 'approve');
         };
-
-        const handleOverride = () => {
-          const confirmed = window.confirm('Answer mismatch detected. Approve anyway and share your contact details with this finder?');
-          if (!confirmed) return;
-          doAction(c.id, 'approve');
-        };
         return (
           <div key={c.id} className="p-4 border rounded-xl bg-white shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Your Question</div>
@@ -506,12 +500,10 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                   {finderAnswer?.trim() ? finderAnswer : 'Finder did not provide an answer.'}
                 </div>
                 {answerMatches && (
-                  <div className="text-xs text-green-600 mt-1">Matches the answer you provided.</div>
+                  <div className="text-xs text-green-600 mt-1">Matches the verification answer you noted.</div>
                 )}
                 {answerMismatched && (
-                  <div className="text-xs text-red-600 mt-1">
-                    Does not match your stored answer. Use the override control below only if you personally verified the finder.
-                  </div>
+                  <div className="text-xs text-red-600 mt-1">Does not match the verification answer you noted.</div>
                 )}
               </div>
               <div className="px-4 py-3 border-b flex items-center justify-between">
@@ -533,21 +525,11 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                       No
                     </button>
                     <button
-                      className={`px-4 py-1.5 rounded font-semibold ${answerMismatched ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white'}`}
-                      onClick={() => !answerMismatched && handleApprove()}
-                      disabled={answerMismatched}
+                      className="px-4 py-1.5 rounded font-semibold bg-blue-600 text-white"
+                      onClick={handleApprove}
                     >
                       Yes
                     </button>
-                    {answerMismatched && (
-                      <button
-                        className="px-4 py-1.5 rounded font-semibold border border-red-300 text-red-600"
-                        onClick={handleOverride}
-                        type="button"
-                      >
-                        Override
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>

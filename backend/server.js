@@ -426,7 +426,7 @@ app.post('/claims', async (req, res) => {
     if (itemErr || !item) return res.status(404).json({ error: 'item_not_found' });
 
     const normalizedFinderAnswer = trimmedFinderAnswer.toLowerCase();
-    let answerIsCorrect = false;
+    let answerIsCorrect = null;
     if (normalizedFinderAnswer && item.security_answer) {
       try {
         const stored = String(item.security_answer || '');
