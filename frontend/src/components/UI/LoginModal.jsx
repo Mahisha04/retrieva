@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-export default function LoginModal({ onClose, onLogin }) {
+export default function LoginModal({ onClose, onLogin, onForgotPassword }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [savedEmails, setSavedEmails] = useState([]);
@@ -100,6 +100,15 @@ export default function LoginModal({ onClose, onLogin }) {
               placeholder="Password"
               className={inputClass}
             />
+            <div className="text-right mt-2">
+              <button
+                type="button"
+                className="text-sm text-cyan-200 hover:text-white underline"
+                onClick={() => onForgotPassword && onForgotPassword(email)}
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
 
           {error && (

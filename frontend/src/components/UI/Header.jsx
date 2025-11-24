@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import LoginModal from "./LoginModal";
 import SignupModal from "./SignupModal";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, onSignup, onLogout }) {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotPrefill, setForgotPrefill] = useState("");
   const displayName = user ? (user.name ? user.name.split(' ')[0] : (user.email ? user.email.split('@')[0] : null)) : null;
 
   return (
@@ -84,6 +87,11 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
             if (onLogin) onLogin(u);
             setShowLogin(false);
           }}
+          onForgotPassword={(prefillEmail) => {
+            setForgotPrefill(prefillEmail || "");
+            setShowLogin(false);
+            setShowForgot(true);
+          }}
         />
       )}
 
@@ -93,6 +101,22 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
           onSignup={(u) => {
             if (onSignup) onSignup(u);
             setShowSignup(false);
+          }}
+        />
+      )}
+
+      {showForgot && (
+        <ForgotPasswordModal
+          initialEmail={forgotPrefill}
+          onClose={() => {
+            setShowForgot(false);
+          }}
+          onResetComplete={(info) => {
+            setShowForgot(false);
+            if (info?.email) {
+              setForgotPrefill(info.email);
+            }
+            setShowLogin(true);
           }}
         />
       )}
