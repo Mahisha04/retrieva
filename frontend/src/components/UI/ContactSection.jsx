@@ -63,6 +63,11 @@ export default function ContactSection() {
           <p className="mt-2 text-sm text-gray-600 max-w-md">
             If there is something you want to suggest or you simply want to say hello, feel free to reach out. We'll follow up quickly.
           </p>
+          <div className="mt-4 text-sm text-gray-700 space-y-1">
+            <p>Email us directly:</p>
+            <a href="mailto:mahisha04@gmail.com" className="text-indigo-600 hover:underline">mahisha04@gmail.com</a>
+            <a href="mailto:aaditi2226@gmail.com" className="text-indigo-600 hover:underline">aaditi2226@gmail.com</a>
+          </div>
         </div>
       </div>
       <div className="border-t border-gray-100 py-6 text-center text-sm text-gray-500">
