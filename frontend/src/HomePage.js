@@ -251,13 +251,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
             <h2 className="text-3xl font-semibold">Welcome, {user.name ? user.name.split(' ')[0] : user.email}</h2>
           </div>
 
-          <UseCases
-            user={user}
-            onReportLost={handleReportLostFlow}
-            onBrowseFeed={handleBrowseLostFlow}
-            onClaimFromFinder={handleClaimFlow}
-          />
-
           <div className="mt-6 space-y-6">
             {tab === 'feed' && (
               <div id="feed-overview" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
