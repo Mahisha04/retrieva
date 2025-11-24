@@ -8,6 +8,11 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
 
   const finderContact = (user && user.email) || 'anonymous';
   const question = item?.security_question || "Security question";
+  const helperCopy = {
+    finder: "Share a detail that proves you have the item (example: what's engraved on the back?).",
+    'claim-owner': "Answer the question you originally set so we know it's your listing.",
+    claimer: "Double-check your answer—owners use it to verify you before sharing contact details."
+  };
 
   async function submitAnswer(e) {
     e && e.preventDefault();
@@ -73,7 +78,8 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
           <button onClick={onClose} className="text-gray-500">✕</button>
         </div>
 
-        <p className="mt-3 text-sm text-gray-700">{question}</p>
+        <p className="mt-3 text-sm text-gray-700 font-medium">{question}</p>
+        <p className="text-xs text-gray-500 mt-1">{helperCopy[mode] || helperCopy.claimer}</p>
 
         <form onSubmit={submitAnswer} className="mt-4">
           <input

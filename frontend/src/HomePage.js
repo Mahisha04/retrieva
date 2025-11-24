@@ -6,6 +6,7 @@ import AddItem from "./components/AddItem";
 import HowItWorks from "./components/UI/HowItWorks";
 import ContactSection from "./components/UI/ContactSection";
 import ProjectInspiration from "./components/UI/ProjectInspiration";
+import UseCases from "./components/UI/UseCases";
 import React from 'react';
 import {API}from "./config";
 import fallbackItems from "./data/items.json";
@@ -108,6 +109,14 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     };
   }, []);
 
+  const scrollToId = useCallback((id) => {
+    if (!id) return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
+
   const refreshIds = useCallback(() => {
     if (!storageKey) {
       setMyItemIds([]);
@@ -186,6 +195,43 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  const ensureTab = useCallback((targetTab) => {
+    if (!user) return false;
+    setTab(targetTab);
+    if (setActiveTab) setActiveTab(targetTab);
+    return true;
+  }, [user, setActiveTab]);
+
+  const handleReportLostFlow = useCallback(() => {
+    if (!user) {
+      handleGetStarted();
+      return;
+    }
+    if (ensureTab('add')) {
+      setTimeout(() => scrollToId('report-lost-panel'), 120);
+    }
+  }, [user, ensureTab, scrollToId, handleGetStarted]);
+
+  const handleBrowseLostFlow = useCallback(() => {
+    if (!user) {
+      handleGetStarted();
+      return;
+    }
+    if (ensureTab('lost-board')) {
+      setTimeout(() => scrollToId('lost-board-section'), 120);
+    }
+  }, [user, ensureTab, scrollToId, handleGetStarted]);
+
+  const handleClaimFlow = useCallback(() => {
+    if (!user) {
+      handleGetStarted();
+      return;
+    }
+    if (ensureTab('responses')) {
+      setTimeout(() => scrollToId('owner-approvals'), 200);
+    }
+  }, [user, ensureTab, scrollToId, handleGetStarted]);
+
   // user dashboard view when logged in
   if (user) {
     const userEmail = (user.email || "").toLowerCase();
@@ -205,10 +251,45 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
             <h2 className="text-3xl font-semibold">Welcome, {user.name ? user.name.split(' ')[0] : user.email}</h2>
           </div>
 
-          <div className="mt-6">
+          <UseCases
+            user={user}
+            onReportLost={handleReportLostFlow}
+            onBrowseFeed={handleBrowseLostFlow}
+            onClaimFromFinder={handleClaimFlow}
+          />
+
+          <div className="mt-6 space-y-6">
             {tab === 'feed' && (
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Lost Items</h3>
+              <div id="feed-overview" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold mb-2">Dashboard Overview</h3>
+                <p className="text-sm text-gray-600">
+                  Use the navigation bar to open the <strong>Lost</strong> or <strong>Found</strong> boxes. Keeping the feed clear makes it easy to decide which portal you need.
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-3 text-sm text-gray-500">
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                    <div className="text-xs uppercase text-gray-400">Total Listings</div>
+                    <div className="text-2xl font-semibold text-gray-900">{items.length}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                    <div className="text-xs uppercase text-gray-400">Lost Items</div>
+                    <div className="text-2xl font-semibold text-gray-900">{lostItems.length}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                    <div className="text-xs uppercase text-gray-400">Found Items</div>
+                    <div className="text-2xl font-semibold text-gray-900">{foundItems.length}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {tab === 'lost-board' && (
+              <div id="lost-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">Lost Items</h3>
+                    <p className="text-sm text-gray-600">Public posts from students who misplaced something. Use the filters above to narrow the list.</p>
+                  </div>
+                </div>
                 {lostItems.length === 0 ? (
                   <div className="text-gray-500">No lost items found.</div>
                 ) : (
@@ -218,10 +299,19 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                     ))}
                   </div>
                 )}
+              </div>
+            )}
 
-                <h3 className="text-xl font-semibold mt-8 mb-4">Found Items</h3>
+            {tab === 'found-board' && (
+              <div id="found-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">Found Items</h3>
+                    <p className="text-sm text-gray-600">Items reported as found and waiting for their owners to reach out.</p>
+                  </div>
+                </div>
                 {foundItems.length === 0 ? (
-                  <div className="text-gray-500">No found items found.</div>
+                  <div className="text-gray-500">No found items yet.</div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {foundItems.map((i) => (
@@ -296,13 +386,14 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                     ownedIds={myItemIds}
                     onAction={() => window.location.reload()}
                     items={items}
+                    containerId="owner-approvals"
                   />
                 </div>
               </div>
             )}
 
             {tab === 'add' && (
-              <div>
+              <div id="report-lost-panel">
                 <h3 className="text-xl font-semibold mb-4">Add Item</h3>
                 <div className="bg-white p-6 rounded shadow">
                   <AddItem
@@ -330,6 +421,12 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       {!user && (
         <>
           <ProjectInspiration onGetStarted={handleGetStarted} />
+          <UseCases
+            user={user}
+            onReportLost={handleReportLostFlow}
+            onBrowseFeed={handleBrowseLostFlow}
+            onClaimFromFinder={handleClaimFlow}
+          />
           <HowItWorks />
         </>
       )}
@@ -414,7 +511,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   );
 }
 
-function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] }) {
+function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [], containerId }) {
   const [claims, setClaims] = React.useState([]);
   const normalizedOwnedIds = React.useMemo(() => {
     return (ownedIds || [])
@@ -476,7 +573,10 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
   if (!claims || claims.length === 0) return <div className="text-gray-500 mt-2">No pending requests.</div>;
 
   return (
-    <div className="mt-3 space-y-4">
+    <div className="mt-3 space-y-4" id={containerId || undefined}>
+      <p className="text-sm text-gray-600">
+        Compare the finder's answer with what you know. Approve to share your contact or reject to keep looking.
+      </p>
       {claims.map((c) => {
         const created = c.createdAt ? new Date(c.createdAt).toLocaleString() : 'Unknown date';
         const linkedItem = itemLookup.get(String(c.itemId ?? c.item_id ?? '')) || null;
@@ -485,9 +585,6 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
         const answerMatches = c.answerIsCorrect === true;
         const answerMismatched = c.answerIsCorrect === false;
 
-        const handleApprove = () => {
-          doAction(c.id, 'approve');
-        };
         return (
           <div key={c.id} className="p-4 border rounded-xl bg-white shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Your Question</div>
@@ -526,7 +623,7 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [] 
                     </button>
                     <button
                       className="px-4 py-1.5 rounded font-semibold bg-blue-600 text-white"
-                      onClick={handleApprove}
+                      onClick={() => doAction(c.id, 'approve')}
                     >
                       Yes
                     </button>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "../config";
 
@@ -9,7 +9,13 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [securityQuestion, setSecurityQuestion] = useState("");
+  const [lostDate, setLostDate] = useState("");
+  const [contactInfo, setContactInfo] = useState(() => (user?.email || user?.phone || ""));
   const [images, setImages] = useState([]);
+
+  useEffect(() => {
+    setContactInfo((user?.email || user?.phone || ""));
+  }, [user]);
 
   const handleFiles = (e) => {
     setImages(Array.from(e.target.files));
@@ -26,7 +32,7 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title || !category || images.length === 0 || !location || !securityQuestion.trim()) {
+    if (!title || !category || images.length === 0 || !location || !securityQuestion.trim() || !lostDate || !contactInfo.trim()) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -34,7 +40,7 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
     const ownerEmail = (user && user.email) ? user.email.trim() : "";
     const rawPhone = (user && user.phone) ? user.phone.toString() : "";
     const ownerPhoneDigits = rawPhone.replace(/\D+/g, "");
-    const preferredContact = ownerEmail || ownerPhoneDigits || "";
+    const preferredContact = contactInfo.trim() || ownerEmail || ownerPhoneDigits || "";
 
     const formData = new FormData();
     formData.append("status", status);
@@ -46,6 +52,7 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
     formData.append("description", description);
     formData.append("location", location);
     formData.append("contact", preferredContact);
+    formData.append("date_lost", lostDate);
     if (ownerPhoneDigits) {
       formData.append("owner_phone", ownerPhoneDigits);
       formData.append("contact_phone", ownerPhoneDigits);
@@ -93,6 +100,8 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
       setDescription("");
       setLocation("");
       setSecurityQuestion("");
+      setLostDate("");
+      setContactInfo(user?.email || user?.phone || "");
       setImages([]);
       if (onClose) onClose();
 
@@ -116,7 +125,11 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
 
   return (
     <div className="add-item">
-      <h2 className="text-xl font-semibold mb-4">Submit Lost or Found Item</h2>
+      <h2 className="text-xl font-semibold mb-2">Submit Lost or Found Item</h2>
+      <p className="text-sm text-gray-600 mb-4">
+        This form powers use case #1. Tell classmates what went missing, attach at least one clear photo, and share the contact information
+        you want finders to use so your post appears in the public feed immediately.
+      </p>
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm">Item Status *</label>
@@ -154,6 +167,28 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
         </div>
 
         <div>
+          <label className="block text-sm">Date Lost *</label>
+          <input
+            type="date"
+            value={lostDate}
+            onChange={(e) => setLostDate(e.target.value)}
+            className="mt-1 w-full border px-3 py-2 rounded"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm">Contact Info *</label>
+          <input
+            type="text"
+            value={contactInfo}
+            onChange={(e) => setContactInfo(e.target.value)}
+            placeholder="Email or phone number for finders to reach you"
+            className="mt-1 w-full border px-3 py-2 rounded"
+          />
+          <p className="text-xs text-gray-500 mt-1">Visible to visitors when they tap Contact Owner.</p>
+        </div>
+
+        <div>
           <label className="block text-sm">Security Question *</label>
           <input
             type="text"
@@ -162,18 +197,20 @@ function AddItem({ onClose, formRef, showButtons = true, user = null, onUploaded
             placeholder="e.g., What engraving is on the inside?"
             className="mt-1 w-full border px-3 py-2 rounded"
           />
+          <p className="text-xs text-gray-500 mt-1">We show this question to the finder so you can judge their answer before approving.</p>
         </div>
 
         <div>
           <label className="block text-sm">Upload Images (Max 5) *</label>
           <input type="file" accept="image/*" multiple onChange={handleFiles} className="mt-1" />
           <div className="mt-2 text-sm text-gray-600">{images.length} file(s) selected</div>
+          <p className="text-xs text-gray-500 mt-1">The first photo becomes the card preview everyone sees in the Feed.</p>
         </div>
 
         {showButtons && (
           <div className="flex justify-end gap-2">
             <button type="button" className="px-3 py-2 bg-gray-200 rounded" onClick={() => (onClose ? onClose() : null)}>Cancel</button>
-            <button type="submit" className="px-3 py-2 bg-teal-600 text-white rounded">Upload Item</button>
+            <button type="submit" className="px-3 py-2 bg-teal-600 text-white rounded">Post Lost Item</button>
           </div>
         )}
       </form>

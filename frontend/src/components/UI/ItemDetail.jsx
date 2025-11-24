@@ -170,9 +170,11 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
                   <h4 className="text-sm font-semibold text-gray-600">CONTACT INFORMATION</h4>
                   <div className="mt-2 bg-teal-50 border border-teal-100 rounded p-3 text-sm text-teal-800">
                     {currentItem?.contact || currentItem?.contact_info || currentItem?.email || "No contact provided"}
-                    <div className="text-xs text-gray-500 mt-1">Please reach out if you have any information about this item.</div>
+                    <div className="text-xs text-gray-500 mt-1">Use this channel after an owner approves your request.</div>
                   </div>
                   <div className="mt-4">
+                    <p className="text-xs uppercase text-gray-500 tracking-wide">Finder action</p>
+                    <p className="text-sm text-gray-600">Tap "Claim Item" to tell the owner you have it. Answer their question and we will notify them so they can confirm it's theirs.</p>
                     <div className="flex gap-3 mt-3">
                       {/* If this is a lost item, allow someone who found it to submit a request (finder flow).
                           Do not show a direct Claim button on lost items. */}
@@ -184,7 +186,7 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
                               onClick={() => setClaimConfirmOpen(true)}
                             >
                               <Icons.ClaimIcon className="w-4 h-4 text-white" />
-                              I found this
+                              Claim Item
                             </button>
                             {/* If user is logged in but not owner, allow them to prove ownership using the security answer */}
                             {/* Prove Ownership button removed for simpler finder flow */}
@@ -235,7 +237,7 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
       {claimConfirmOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setClaimConfirmOpen(false)}>
           <div className="bg-white rounded-lg p-4 w-full max-w-sm shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-medium">{isLost ? 'Are you sure you found the item?' : 'Are you sure you want to claim this item?'}</h3>
+            <h3 className="text-base font-medium">Are you sure you want to submit a claim for this item?</h3>
             <div className="mt-3 flex justify-end gap-2">
               <button className="px-3 py-2 bg-blue-500 text-white rounded" onClick={() => setClaimConfirmOpen(false)}>No</button>
               <button className="px-3 py-2 bg-red-500 text-white rounded" onClick={() => { setClaimConfirmOpen(false); setClaimOpen(true); }}>Yes</button>
