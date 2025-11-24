@@ -174,7 +174,7 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
                   </div>
                   <div className="mt-4">
                     <p className="text-xs uppercase text-gray-500 tracking-wide">Finder action</p>
-                    <p className="text-sm text-gray-600">Tap "Claim Item" to tell the owner you have it. Answer their question and we will notify them so they can confirm it's theirs.</p>
+                    <p className="text-sm text-gray-600">Tap "I Found This Item" to tell the owner you have it. Answer their question and we will notify them so they can confirm it's theirs.</p>
                     <div className="flex gap-3 mt-3">
                       {/* If this is a lost item, allow someone who found it to submit a request (finder flow).
                           Do not show a direct Claim button on lost items. */}
@@ -186,7 +186,7 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
                               onClick={() => setClaimConfirmOpen(true)}
                             >
                               <Icons.ClaimIcon className="w-4 h-4 text-white" />
-                              Claim Item
+                              I Found This Item
                             </button>
                             {/* If user is logged in but not owner, allow them to prove ownership using the security answer */}
                             {/* Prove Ownership button removed for simpler finder flow */}

@@ -13,6 +13,7 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
     'claim-owner': "Answer the question you originally set so we know it's your listing.",
     claimer: "Double-check your answer—owners use it to verify you before sharing contact details."
   };
+  const submitCopy = mode === 'finder' ? 'Submit to Owner' : 'Submit Answer';
 
   async function submitAnswer(e) {
     e && e.preventDefault();
@@ -74,7 +75,7 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">{mode === 'finder' ? 'I found this' : (mode === 'claim-owner' ? 'Prove Ownership' : 'Claim Item')}</h3>
+          <h3 className="text-lg font-semibold">{mode === 'finder' ? 'I Found This Item' : (mode === 'claim-owner' ? 'Prove Ownership' : 'Claim Item')}</h3>
           <button onClick={onClose} className="text-gray-500">✕</button>
         </div>
 
@@ -82,7 +83,9 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
         <p className="text-xs text-gray-500 mt-1">{helperCopy[mode] || helperCopy.claimer}</p>
 
         <form onSubmit={submitAnswer} className="mt-4">
+          <label className="text-sm font-medium text-gray-700" htmlFor="security-answer">Security Question Answer</label>
           <input
+            id="security-answer"
             className="w-full border rounded px-3 py-2"
             placeholder="Enter Answer"
             value={answer}
@@ -93,7 +96,7 @@ export default function VerifyModal({ item, onClose, mode = 'claimer', user = nu
           <div className="mt-4 flex items-center gap-3 justify-end">
             <button type="button" className="px-4 py-2 border rounded" onClick={onClose}>Close</button>
             <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>
-              {loading ? "Checking..." : 'Submit'}
+              {loading ? "Checking..." : submitCopy}
             </button>
           </div>
         </form>

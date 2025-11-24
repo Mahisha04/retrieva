@@ -577,9 +577,26 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [],
         const finderAnswer = c.finderAnswer ?? c.finder_answer ?? c.answer ?? c.answer_text ?? c.securityAnswer ?? c.response ?? null;
         const answerMatches = c.answerIsCorrect === true;
         const answerMismatched = c.answerIsCorrect === false;
+        const itemName = linkedItem?.name || c.itemName || `Item #${c.itemId ?? c.item_id ?? ''}`;
+        const itemLocation = linkedItem?.location || 'No location noted';
+        const itemDescription = linkedItem?.description || 'No description provided.';
+        const itemImage = linkedItem?.image_url || null;
 
         return (
           <div key={c.id} className="p-4 border rounded-xl bg-white shadow-sm">
+            <div className="flex gap-4 mb-4">
+              <div className="flex-1">
+                <div className="text-xs uppercase tracking-wide text-gray-500">Item</div>
+                <div className="text-lg font-semibold text-gray-900">{itemName}</div>
+                <div className="text-sm text-gray-600 mt-1">{itemDescription}</div>
+                <div className="text-xs text-gray-500 mt-1">Location: {itemLocation}</div>
+              </div>
+              {itemImage && (
+                <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-100">
+                  <img src={itemImage} alt={itemName} className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
             <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Your Question</div>
             <div className="text-base font-semibold text-gray-900">{question}</div>
 
@@ -612,13 +629,13 @@ function PendingClaims({ ownerEmail, ownerPhone, ownedIds, onAction, items = [],
                       className="px-4 py-1.5 rounded bg-red-100 text-red-600 font-semibold"
                       onClick={() => doAction(c.id, 'reject')}
                     >
-                      No
+                      Reject
                     </button>
                     <button
                       className="px-4 py-1.5 rounded font-semibold bg-blue-600 text-white"
                       onClick={() => doAction(c.id, 'approve')}
                     >
-                      Yes
+                      Approve
                     </button>
                   </div>
                 </div>
@@ -684,16 +701,12 @@ function FinderClaims({ finderContact }) {
         <div className="space-y-3">
           {claims.map((c) => {
             const finderAnswer = c.finderAnswer ?? c.finder_answer ?? c.answer ?? c.answer_text ?? c.securityAnswer ?? c.response ?? null;
+            const ownerContact = c.ownerPhone || c.ownerEmail || null;
             return (
               <div key={c.id} className="p-3 rounded-lg border bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <div className="font-semibold text-gray-900">{c.itemName || `Item #${c.itemId}`}</div>
                   <div className="text-sm text-gray-600 capitalize">Status: {c.status}</div>
-                  {c.status === 'approved' && (
-                    <div className="mt-1 text-sm text-green-700 font-medium">
-                      Owner phone: {c.ownerPhone || 'Not provided'}
-                    </div>
-                  )}
                 </div>
                 <div className="text-sm text-gray-600">
                   <div>Requested: {new Date(c.createdAt).toLocaleString()}</div>
@@ -702,24 +715,17 @@ function FinderClaims({ finderContact }) {
                       Finder answer: <span className="font-medium whitespace-pre-line">{finderAnswer}</span>
                     </div>
                   )}
-                  {c.status === 'approved' && c.ownerEmail && (
-                    <div className="mt-1 text-gray-700">Owner Email: {c.ownerEmail}</div>
-                  )}
-                  {c.status !== 'approved' && (
+                  {c.status === 'pending' && (
                     <div className="mt-1 text-gray-500">Waiting for owner approval</div>
                   )}
+                  {c.status === 'rejected' && (
+                    <div className="mt-1 text-sm text-red-600 font-medium">Request Rejected.</div>
+                  )}
                   {c.status === 'approved' && (
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded"
-                        onClick={() => {
-                          const contact = c.ownerPhone || c.ownerEmail || 'Owner contact unavailable';
-                          alert(`Here is the contact: ${contact}`);
-                        }}
-                      >
-                        Show Number
-                      </button>
+                    <div className="mt-3 p-3 rounded border border-green-200 bg-white text-gray-900">
+                      <div className="text-xs uppercase text-gray-500">Contact the Owner</div>
+                      <div className="text-sm font-semibold text-green-800 mt-1">{ownerContact || 'Owner contact unavailable'}</div>
+                      <div className="text-xs text-gray-500 mt-1">Use this info to coordinate pickup.</div>
                     </div>
                   )}
                 </div>
