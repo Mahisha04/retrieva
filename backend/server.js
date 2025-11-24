@@ -23,6 +23,8 @@ app.use((err, req, res, next) => {
 const SUPABASE_URL = "https://fcihpclldwuckzfwohkf.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjaWhwY2xsZHd1Y2t6ZndvaGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzEyMjA1MiwiZXhwIjoyMDc4Njk4MDUyfQ.4RimsKdjd-Pq90g3U1fWk2QkP2QC6GRrcZgI8R9MnJc";
 const BUCKET_NAME = "item-images";
+const FOUND_ITEM_FOLDER = 'found-items';
+const FOUND_PROOF_FOLDER = 'found-proofs';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -508,6 +510,167 @@ app.post('/claims', upload.single('proofPhoto'), async (req, res) => {
     res.json({ ok: true, claim });
   } catch (e) {
     console.log('⚠️ create claim error', e);
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// ------------------ FOUND ITEMS WORKFLOW ------------------
+
+function safeFileName(original = 'upload.jpg', prefix = '') {
+  const cleaned = original.replace(/[^a-zA-Z0-9._-]/g, '_');
+  return `${prefix}${Date.now()}-${cleaned}`;
+}
+
+async function uploadBufferToStorage(path, buffer, mimeType = 'application/octet-stream') {
+  const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, buffer, {
+    contentType: mimeType,
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
+  return data?.publicUrl || null;
+}
+
+// POST /found-items
+app.post('/found-items', upload.single('image'), async (req, res) => {
+  try {
+    const { itemName, description, locationFound, dateFound, finderContact, finderPhone } = req.body || {};
+    if (!itemName) return res.status(400).json({ error: 'missing_item_name' });
+    if (!req.file) return res.status(400).json({ error: 'missing_image' });
+
+    const storagePath = `${FOUND_ITEM_FOLDER}/${safeFileName(req.file.originalname)}`;
+    const imageUrl = await uploadBufferToStorage(storagePath, req.file.buffer, req.file.mimetype || 'image/jpeg');
+
+    const payload = {
+      item_name: itemName,
+      description: description || null,
+      location_found: locationFound || null,
+      date_found: dateFound || null,
+      image_url: imageUrl,
+      status: 'unclaimed',
+      finder_contact: finderContact || null,
+      finder_phone: finderPhone ? finderPhone.toString() : null,
+    };
+
+    const { data, error } = await supabase.from('found_items').insert([payload]).select().single();
+    if (error) throw error;
+    res.json({ ok: true, item: data });
+  } catch (e) {
+    console.log('⚠️ found item create error', e);
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// GET /found-items?status=unclaimed
+app.get('/found-items', async (req, res) => {
+  try {
+    const status = (req.query.status || '').toString().toLowerCase();
+    let query = supabase.from('found_items').select('*').order('created_at', { ascending: false });
+    if (status) {
+      query = query.eq('status', status);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// POST /found-item-claims
+app.post('/found-item-claims', upload.single('proofPhoto'), async (req, res) => {
+  try {
+    const { foundItemId, claimantContact, claimantName } = req.body || {};
+    if (!foundItemId) return res.status(400).json({ error: 'missing_found_item_id' });
+    if (!claimantContact) return res.status(400).json({ error: 'missing_contact' });
+    if (!req.file) return res.status(400).json({ error: 'missing_proof_photo' });
+
+    const proofPath = `${FOUND_PROOF_FOLDER}/${safeFileName(req.file.originalname, `${foundItemId}-`)}`;
+    const proofUrl = await uploadBufferToStorage(proofPath, req.file.buffer, req.file.mimetype || 'image/jpeg');
+
+    const payload = {
+      found_item_id: Number(foundItemId),
+      claimant_contact: claimantContact,
+      claimant_name: claimantName || null,
+      proof_photo_url: proofUrl,
+      status: 'pending',
+    };
+
+    const { data, error } = await supabase.from('found_item_claims').insert([payload]).select().single();
+    if (error) throw error;
+    res.json({ ok: true, claim: data });
+  } catch (e) {
+    console.log('⚠️ found item claim error', e);
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// Helper to attach found item info to claims
+async function attachFoundItemsToClaims(claims) {
+  if (!Array.isArray(claims) || claims.length === 0) return [];
+  const ids = [...new Set(claims.map((c) => c.found_item_id).filter(Boolean))];
+  if (ids.length === 0) return claims;
+  try {
+    const { data, error } = await supabase.from('found_items').select('*').in('id', ids);
+    if (error) throw error;
+    const map = new Map((data || []).map((item) => [item.id, item]));
+    return claims.map((claim) => ({ ...claim, found_item: map.get(claim.found_item_id) || null }));
+  } catch (e) {
+    console.log('⚠️ attach found items error', e);
+    return claims;
+  }
+}
+
+// GET /found-item-claims
+app.get('/found-item-claims', async (req, res) => {
+  try {
+    const claimantContact = (req.query.claimantContact || '').toString().toLowerCase();
+    const admin = req.query.admin === 'true';
+    let query = supabase.from('found_item_claims').select('*').order('created_at', { ascending: false });
+    if (claimantContact) {
+      query = query.ilike('claimant_contact', claimantContact);
+    }
+    if (!admin && !claimantContact) {
+      return res.json([]);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    const enriched = await attachFoundItemsToClaims(data || []);
+    res.json(enriched);
+  } catch (e) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// PATCH /found-item-claims/:id
+app.patch('/found-item-claims/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const action = req.body?.action;
+    if (!id || !action) return res.status(400).json({ error: 'missing_params' });
+
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    const { data, error } = await supabase
+      .from('found_item_claims')
+      .update({ status, acted_at: new Date().toISOString() })
+      .eq('claim_id', id)
+      .select()
+      .single();
+    if (error) throw error;
+
+    if (status === 'approved' && data?.found_item_id) {
+      try {
+        await supabase
+          .from('found_items')
+          .update({ status: 'claimed' })
+          .eq('id', data.found_item_id);
+      } catch (e) {
+        console.log('⚠️ failed to mark found item claimed', e);
+      }
+    }
+
+    res.json({ ok: true, claim: data });
+  } catch (e) {
     res.status(500).json({ error: e.message || String(e) });
   }
 });

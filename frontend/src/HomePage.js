@@ -7,11 +7,16 @@ import HowItWorks from "./components/UI/HowItWorks";
 import ContactSection from "./components/UI/ContactSection";
 import ProjectInspiration from "./components/UI/ProjectInspiration";
 import UseCases from "./components/UI/UseCases";
+import FoundItemForm from "./components/FoundItemForm";
+import FoundItemsGallery from "./components/FoundItemsGallery";
+import FoundClaimModal from "./components/FoundClaimModal";
+import FoundClaimsAdmin from "./components/FoundClaimsAdmin";
+import FoundMyClaims from "./components/FoundMyClaims";
 import React from 'react';
 import {API}from "./config";
 import fallbackItems from "./data/items.json";
 
-export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActiveTab }) {
+export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActiveTab, isAdmin = false }) {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
@@ -19,6 +24,13 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   const [sort, setSort] = useState("Date Reported");
   const [tab, setTab] = useState(activeTab || 'feed');
   const [myItemIds, setMyItemIds] = useState([]);
+  const [unclaimedFoundItems, setUnclaimedFoundItems] = useState([]);
+  const [loadingFoundItems, setLoadingFoundItems] = useState(false);
+  const [foundClaims, setFoundClaims] = useState([]);
+  const [loadingFoundClaims, setLoadingFoundClaims] = useState(false);
+  const [myFoundClaims, setMyFoundClaims] = useState([]);
+  const [loadingMyFoundClaims, setLoadingMyFoundClaims] = useState(false);
+  const [claimModalItem, setClaimModalItem] = useState(null);
   const storageKey = useMemo(() => {
     const email = (user?.email || '').toLowerCase().trim();
     if (email) return `myItemIds:${email}`;
@@ -232,6 +244,96 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
   }, [user, ensureTab, scrollToId, handleGetStarted]);
 
+  const loadFoundItems = useCallback(async (status = 'unclaimed') => {
+    setLoadingFoundItems(true);
+    try {
+      const res = await fetch(API.url(`/found-items${status ? `?status=${status}` : ''}`));
+      const data = await res.json();
+      setUnclaimedFoundItems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setUnclaimedFoundItems([]);
+    } finally {
+      setLoadingFoundItems(false);
+    }
+  }, []);
+
+  const loadMyFoundClaims = useCallback(async () => {
+    const contact = (user?.email || '').toLowerCase();
+    if (!contact) {
+      setMyFoundClaims([]);
+      return;
+    }
+    setLoadingMyFoundClaims(true);
+    try {
+      const res = await fetch(API.url(`/found-item-claims?claimantContact=${encodeURIComponent(contact)}`));
+      const data = await res.json();
+      setMyFoundClaims(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setMyFoundClaims([]);
+    } finally {
+      setLoadingMyFoundClaims(false);
+    }
+  }, [user]);
+
+  const loadAllFoundClaims = useCallback(async () => {
+    setLoadingFoundClaims(true);
+    try {
+      const res = await fetch(API.url('/found-item-claims?admin=true'));
+      const data = await res.json();
+      setFoundClaims(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setFoundClaims([]);
+    } finally {
+      setLoadingFoundClaims(false);
+    }
+  }, []);
+
+  const handleFoundClaimDecision = useCallback(async (claimId, action) => {
+    if (!claimId || !action) return;
+    try {
+      const res = await fetch(API.url(`/found-item-claims/${claimId}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Failed to update claim');
+      }
+      loadAllFoundClaims();
+      loadMyFoundClaims();
+      loadFoundItems('unclaimed');
+    } catch (e) {
+      alert(e.message || 'Unable to update claim');
+    }
+  }, [loadAllFoundClaims, loadMyFoundClaims, loadFoundItems]);
+
+  const handleFoundClaimSubmitted = useCallback(() => {
+    setClaimModalItem(null);
+    loadMyFoundClaims();
+    loadFoundItems('unclaimed');
+  }, [loadMyFoundClaims, loadFoundItems]);
+
+  useEffect(() => {
+    if (tab === 'found-unclaimed') {
+      loadFoundItems('unclaimed');
+    }
+    if (tab === 'found-my-claims') {
+      loadMyFoundClaims();
+    }
+    if (tab === 'found-approvals' && isAdmin) {
+      loadAllFoundClaims();
+    }
+  }, [tab, loadFoundItems, loadMyFoundClaims, loadAllFoundClaims, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin && tab === 'found-approvals') {
+      const fallbackTab = 'found-unclaimed';
+      setTab(fallbackTab);
+      if (setActiveTab) setActiveTab(fallbackTab);
+    }
+  }, [tab, isAdmin, setActiveTab]);
+
   // user dashboard view when logged in
   if (user) {
     const userEmail = (user.email || "").toLowerCase();
@@ -245,8 +347,9 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     const found = userItems.filter(i => (i.type || '').toLowerCase() === 'found');
 
     return (
-      <div className="bg-gray-100 min-h-screen py-8">
-        <div className="max-w-6xl mx-auto px-6">
+      <>
+        <div className="bg-gray-100 min-h-screen py-8">
+          <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-semibold">Welcome, {user.name ? user.name.split(' ')[0] : user.email}</h2>
           </div>
@@ -403,9 +506,81 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                 </div>
               </div>
             )}
+
+            {tab === 'report-found' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold mb-4">Report a Found Item</h3>
+                <FoundItemForm
+                  user={user}
+                  onSubmitted={() => {
+                    loadFoundItems('unclaimed');
+                    alert('Found item submitted. We will list it in the unclaimed board.');
+                  }}
+                />
+              </div>
+            )}
+
+            {tab === 'found-unclaimed' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">Found Items (Unclaimed)</h3>
+                    <p className="text-sm text-gray-600">Spotted on campus but not yet collected.</p>
+                  </div>
+                  <button
+                    className="text-sm text-teal-600 hover:underline"
+                    onClick={() => loadFoundItems('unclaimed')}
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <FoundItemsGallery
+                  items={unclaimedFoundItems}
+                  loading={loadingFoundItems}
+                  onClaim={(item) => setClaimModalItem(item)}
+                />
+              </div>
+            )}
+
+            {tab === 'found-my-claims' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">My Found Item Claims</h3>
+                  <button className="text-sm text-teal-600 hover:underline" onClick={loadMyFoundClaims}>
+                    Refresh
+                  </button>
+                </div>
+                <FoundMyClaims claims={myFoundClaims} loading={loadingMyFoundClaims} />
+              </div>
+            )}
+
+            {isAdmin && tab === 'found-approvals' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Found Item Approvals</h3>
+                  <button className="text-sm text-teal-600 hover:underline" onClick={loadAllFoundClaims}>
+                    Refresh
+                  </button>
+                </div>
+                <FoundClaimsAdmin
+                  claims={foundClaims}
+                  loading={loadingFoundClaims}
+                  onDecision={handleFoundClaimDecision}
+                  onRefresh={loadAllFoundClaims}
+                />
+              </div>
+            )}
           </div>
         </div>
-      </div>
+        {claimModalItem && (
+          <FoundClaimModal
+            item={claimModalItem}
+            onClose={() => setClaimModalItem(null)}
+            onSubmitted={handleFoundClaimSubmitted}
+            user={user}
+          />
+        )}
+      </>
     );
   }
 

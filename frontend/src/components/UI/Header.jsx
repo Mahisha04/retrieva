@@ -3,7 +3,7 @@ import LoginModal from "./LoginModal";
 import SignupModal from "./SignupModal";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 
-export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, onSignup, onLogout }) {
+export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, onSignup, onLogout, isAdmin = false }) {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
@@ -41,6 +41,36 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
               >
                 Found Items
               </button>
+
+              <button
+                className={`px-3 py-2 rounded ${activeTab === 'report-found' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                onClick={() => onSetTab && onSetTab('report-found')}
+              >
+                Report Found
+              </button>
+
+              <button
+                className={`px-3 py-2 rounded ${activeTab === 'found-unclaimed' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                onClick={() => onSetTab && onSetTab('found-unclaimed')}
+              >
+                Unclaimed Found
+              </button>
+
+              <button
+                className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                onClick={() => onSetTab && onSetTab('found-my-claims')}
+              >
+                My Found Claims
+              </button>
+
+              {isAdmin && (
+                <button
+                  className={`px-3 py-2 rounded ${activeTab === 'found-approvals' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                  onClick={() => onSetTab && onSetTab('found-approvals')}
+                >
+                  Found Approvals
+                </button>
+              )}
 
               <button
                 className={`px-3 py-2 rounded ${activeTab === 'listings' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}

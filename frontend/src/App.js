@@ -5,6 +5,7 @@ import "./index.css";
 import Header from "./components/UI/Header";
 import HomePage from "./HomePage";
 import AddItem from "./components/AddItem";
+import { isFoundAdmin } from "./config";
 
 const tabFromHash = () => {
   if (typeof window === 'undefined' || !window.location) return 'feed';
@@ -26,6 +27,7 @@ export default function App() {
     }
   });
   const [activeTab, setActiveTab] = useState(() => tabFromHash());
+  const isAdmin = React.useMemo(() => isFoundAdmin(user), [user]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -107,6 +109,7 @@ export default function App() {
         onOpenAdd={() => setShowAdd(true)}
         onSetTab={handleSetTab}
         user={user}
+        isAdmin={isAdmin}
         onLogin={handleLogin}
         onSignup={handleSignup}
         onLogout={handleLogout}
@@ -118,6 +121,7 @@ export default function App() {
         onLogout={handleLogout}
         activeTab={activeTab}
         setActiveTab={handleSetTab}
+        isAdmin={isAdmin}
       />
 
       {showAdd && (
