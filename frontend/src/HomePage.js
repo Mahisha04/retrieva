@@ -572,7 +572,8 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
             )}
           </div>
         </div>
-        {claimModalItem && (
+      </div>
+      {claimModalItem && (
           <FoundClaimModal
             item={claimModalItem}
             onClose={() => setClaimModalItem(null)}
