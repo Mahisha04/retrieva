@@ -8,6 +8,7 @@ import ContactSection from "./components/UI/ContactSection";
 import ProjectInspiration from "./components/UI/ProjectInspiration";
 import React from 'react';
 import {API}from "./config";
+import fallbackItems from "../items.json";
 
 export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActiveTab }) {
   const [items, setItems] = useState([]);
@@ -42,9 +43,30 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [tab]);
 
   useEffect(() => {
-    fetch(`${API}/items`)
-      .then((res) => res.json())
-      .then((data) => setItems(data));
+    let cancelled = false;
+
+    const loadItems = async () => {
+      try {
+        const res = await fetch(API.url('/items'));
+        if (!res.ok) throw new Error('failed-to-fetch');
+        const data = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(data) && data.length > 0) {
+          setItems(data);
+        } else {
+          setItems(fallbackItems);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setItems(fallbackItems);
+        }
+      }
+    };
+
+    loadItems();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
