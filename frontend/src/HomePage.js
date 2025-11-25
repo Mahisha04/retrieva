@@ -463,16 +463,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                     ))}
                   </div>
                 )}
-                {returnedItems.length > 0 && (
-                  <div className="mt-8">
-                    <h4 className="text-lg font-semibold mb-3">Items Returned</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {returnedItems.map((i) => (
-                        <ItemCard key={`returned-${i.id}`} item={i} user={user} ownedIdSet={ownedIdSet} />
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
