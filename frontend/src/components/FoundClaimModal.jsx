@@ -17,12 +17,16 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
       setError("Please upload a proof photo.");
       return;
     }
+    const claimantId = (user?.id || user?.email || user?.phone || "").toString().trim().toLowerCase();
     setSubmitting(true);
     try {
       const fd = new FormData();
       fd.append("foundItemId", item.id);
       fd.append("claimantContact", contact);
       fd.append("claimantName", name);
+      if (claimantId) {
+        fd.append("claimantId", claimantId);
+      }
       fd.append("proofPhoto", proofPhoto);
       const res = await fetch(API.url('/found-item-claims'), {
         method: 'POST',

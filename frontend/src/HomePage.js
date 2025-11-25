@@ -12,6 +12,7 @@ import FoundItemsGallery from "./components/FoundItemsGallery";
 import FoundClaimModal from "./components/FoundClaimModal";
 import FoundClaimsAdmin from "./components/FoundClaimsAdmin";
 import FoundMyClaims from "./components/FoundMyClaims";
+import FoundItemEditModal from "./components/FoundItemEditModal";
 import React from 'react';
 import {API}from "./config";
 import fallbackItems from "./data/items.json";
@@ -31,6 +32,8 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   const [myFoundClaims, setMyFoundClaims] = useState([]);
   const [loadingMyFoundClaims, setLoadingMyFoundClaims] = useState(false);
   const [claimModalItem, setClaimModalItem] = useState(null);
+  const [editingFoundItem, setEditingFoundItem] = useState(null);
+  const [deletingFoundItemId, setDeletingFoundItemId] = useState(null);
   const [myFoundItems, setMyFoundItems] = useState([]);
   const [loadingMyFoundItems, setLoadingMyFoundItems] = useState(false);
   const [finderDecisionClaimId, setFinderDecisionClaimId] = useState(null);
@@ -263,7 +266,8 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   const loadMyFoundItems = useCallback(async () => {
     const contact = (user?.email || '').toLowerCase();
     const phoneDigits = (user?.phone || '').toString().replace(/\D+/g, '');
-    if (!contact && !phoneDigits) {
+    const finderId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
+    if (!contact && !phoneDigits && !finderId) {
       setMyFoundItems([]);
       return;
     }
@@ -272,6 +276,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       const params = new URLSearchParams();
       if (contact) params.append('finderContact', contact);
       if (phoneDigits) params.append('finderPhone', phoneDigits);
+      if (finderId) params.append('finderId', finderId);
       params.append('includeClaims', 'true');
       const suffix = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(API.url(`/found-items${suffix}`));
@@ -286,13 +291,20 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
 
   const loadMyFoundClaims = useCallback(async () => {
     const contact = (user?.email || '').toLowerCase();
+    const claimantId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
     if (!contact) {
-      setMyFoundClaims([]);
-      return;
+      if (!claimantId) {
+        setMyFoundClaims([]);
+        return;
+      }
     }
     setLoadingMyFoundClaims(true);
     try {
-      const res = await fetch(API.url(`/found-item-claims?claimantContact=${encodeURIComponent(contact)}`));
+      const params = new URLSearchParams();
+      if (contact) params.append('claimantContact', contact);
+      if (claimantId) params.append('claimantId', claimantId);
+      const suffix = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(API.url(`/found-item-claims${suffix}`));
       const data = await res.json();
       setMyFoundClaims(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -363,6 +375,47 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     loadMyFoundClaims();
     loadFoundItems('unclaimed');
   }, [loadMyFoundClaims, loadFoundItems]);
+
+  const handleStartEditFoundItem = useCallback((item) => {
+    setEditingFoundItem(item);
+  }, []);
+
+  const handleFoundItemUpdated = useCallback(() => {
+    setEditingFoundItem(null);
+    loadFoundItems('unclaimed');
+    loadMyFoundItems();
+  }, [loadFoundItems, loadMyFoundItems]);
+
+  const handleDeleteFoundItem = useCallback(async (item) => {
+    if (!item) return;
+    if (typeof window !== 'undefined') {
+      const confirmDelete = window.confirm('Delete this found item? This action cannot be undone.');
+      if (!confirmDelete) return;
+    }
+    const finderId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
+    const phoneDigits = (user?.phone || '').toString().replace(/\D+/g, '');
+    setDeletingFoundItemId(item.id);
+    try {
+      const res = await fetch(API.url(`/found-items/${item.id}`), {
+        method: 'DELETE',
+        headers: {
+          'X-User-Id': finderId || '',
+          'X-User-Email': user?.email || '',
+          'X-User-Phone': phoneDigits || '',
+        },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || 'Failed to delete found item');
+      }
+      loadFoundItems('unclaimed');
+      loadMyFoundItems();
+    } catch (e) {
+      alert(e.message || 'Unable to delete found item');
+    } finally {
+      setDeletingFoundItemId(null);
+    }
+  }, [user, loadFoundItems, loadMyFoundItems]);
 
   useEffect(() => {
     if (tab === 'found-unclaimed') {
@@ -571,6 +624,10 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   items={unclaimedFoundItems}
                   loading={loadingFoundItems}
                   onClaim={(item) => setClaimModalItem(item)}
+                  currentUser={user}
+                  onEdit={handleStartEditFoundItem}
+                  onDelete={handleDeleteFoundItem}
+                  deletingId={deletingFoundItemId}
                 />
               </div>
             )}
@@ -591,6 +648,10 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   loading={loadingMyFoundItems}
                   onDecision={handleFinderClaimDecision}
                   updatingClaimId={finderDecisionClaimId}
+                  onEdit={handleStartEditFoundItem}
+                  onDelete={handleDeleteFoundItem}
+                  deletingId={deletingFoundItemId}
+                  user={user}
                 />
               </div>
             )}
@@ -634,6 +695,14 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
             user={user}
           />
         )}
+      {editingFoundItem && (
+        <FoundItemEditModal
+          item={editingFoundItem}
+          onClose={() => setEditingFoundItem(null)}
+          onUpdated={handleFoundItemUpdated}
+          user={user}
+        />
+      )}
       </>
     );
   }
@@ -733,7 +802,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   );
 }
 
-function FinderFoundItemsBoard({ items = [], loading = false, onDecision, updatingClaimId }) {
+function FinderFoundItemsBoard({ items = [], loading = false, onDecision, updatingClaimId, onEdit, onDelete, deletingId, user }) {
   if (loading) {
     return <div className="text-gray-500">Loading your found items…</div>;
   }
@@ -768,6 +837,9 @@ function FinderFoundItemsBoard({ items = [], loading = false, onDecision, updati
                 <div className="text-sm text-gray-600 mt-1">{item.description || 'No description provided.'}</div>
                 <div className="text-xs text-gray-500 mt-1">Location: {item.location_found || 'Unknown'}</div>
                 <div className="text-xs text-gray-500">Status: {(item.status || 'unclaimed').toUpperCase()}</div>
+                {latestClaim?.claimant_contact && (
+                  <div className="text-xs text-gray-500">Owner contact shared: {latestClaim.claimant_contact}</div>
+                )}
               </div>
               <div className="w-full md:w-40 h-40 bg-gray-100 rounded-lg overflow-hidden border">
                 {item.image_url ? (
@@ -776,6 +848,25 @@ function FinderFoundItemsBoard({ items = [], loading = false, onDecision, updati
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No image</div>
                 )}
               </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-3">
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                type="button"
+                onClick={() => onEdit && onEdit(item)}
+                disabled={!onEdit}
+              >
+                Edit
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded"
+                type="button"
+                onClick={() => onDelete && onDelete(item)}
+                disabled={!onDelete || (deletingId && String(deletingId) === String(item.id))}
+              >
+                {deletingId && String(deletingId) === String(item.id) ? 'Deleting…' : 'Delete'}
+              </button>
             </div>
 
             <div className="mt-4 text-sm font-medium text-gray-800">{statusCopy}</div>

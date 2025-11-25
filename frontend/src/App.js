@@ -16,12 +16,30 @@ const tabFromHash = () => {
   return 'feed';
 };
 
+const deriveUserId = (payload) => {
+  if (!payload) return '';
+  const candidate = payload.id || payload.email || payload.phone || '';
+  return candidate ? candidate.toString().trim().toLowerCase() : '';
+};
+
+const normalizeUserState = (payload) => {
+  if (!payload) return null;
+  const normalizedId = deriveUserId(payload);
+  return {
+    id: normalizedId || null,
+    email: payload.email || '',
+    name: payload.name || null,
+    phone: payload.phone || null,
+  };
+};
+
 export default function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null;
+      const stored = raw ? JSON.parse(raw) : null;
+      return normalizeUserState(stored);
     } catch (e) {
       return null;
     }
@@ -53,7 +71,7 @@ export default function App() {
 
   const handleLogin = (u) => {
     // Basic mock login: store minimal user info in state/localStorage
-    const usr = { email: u.email, name: u.name || null, phone: u.phone || null };
+    const usr = normalizeUserState(u);
     setUser(usr);
     try {
       localStorage.setItem("user", JSON.stringify(usr));
@@ -75,7 +93,7 @@ export default function App() {
   };
 
   const handleSignup = (u) => {
-    const usr = { email: u.email, name: u.name || null, phone: u.phone || null };
+    const usr = normalizeUserState(u);
     setUser(usr);
     try {
       localStorage.setItem("user", JSON.stringify(usr));

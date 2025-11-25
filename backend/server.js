@@ -165,6 +165,78 @@ async function requireOwner(req, res, next) {
   }
 }
 
+function normalizeIdentifier(value) {
+  if (value === undefined || value === null) return '';
+  return value.toString().trim().toLowerCase();
+}
+
+function normalizeDigitsValue(value) {
+  if (!value) return '';
+  return value.toString().replace(/\D+/g, '');
+}
+
+function extractStoragePathFromUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const marker = `${BUCKET_NAME}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.substring(idx + marker.length);
+}
+
+async function deleteStorageAssetByUrl(url) {
+  const path = extractStoragePathFromUrl(url);
+  if (!path) return;
+  try {
+    const { error } = await supabase.storage.from(BUCKET_NAME).remove([path]);
+    if (error) {
+      console.log('⚠️ failed to delete storage asset', { url, error });
+    }
+  } catch (e) {
+    console.log('⚠️ deleteStorageAssetByUrl exception', e);
+  }
+}
+
+async function requireFinderOwner(req, res, next) {
+  try {
+    const id = req.params.id || req.body.id;
+    if (!id) return res.status(400).json({ error: 'missing_id' });
+
+    const { data, error } = await supabase.from('found_items').select('*').eq('id', id).single();
+    if (error || !data) return res.status(404).json({ error: 'not_found' });
+
+    const headerId = normalizeIdentifier(req.headers['x-user-id'] || req.headers['x_user_id']);
+    const headerEmail = normalizeIdentifier(req.headers['x-user-email'] || req.headers['x_user_email']);
+    const headerPhone = normalizeDigitsValue(req.headers['x-user-phone'] || req.headers['x_user_phone']);
+
+    const rowFinderId = normalizeIdentifier(data.finder_id);
+    const rowFinderContact = normalizeIdentifier(data.finder_contact);
+    const rowFinderPhone = normalizeDigitsValue(data.finder_phone);
+
+    const matchesId = rowFinderId && headerId && rowFinderId === headerId;
+    const matchesContact = rowFinderContact && headerEmail && rowFinderContact === headerEmail;
+    const matchesPhone = rowFinderPhone && headerPhone && rowFinderPhone === headerPhone;
+
+    if (matchesId || matchesContact || matchesPhone) {
+      req.foundItem = data;
+      return next();
+    }
+
+    console.log('⚠️ requireFinderOwner denied', {
+      id,
+      headerId,
+      headerEmail,
+      headerPhone,
+      rowFinderId,
+      rowFinderContact,
+      rowFinderPhone,
+    });
+    return res.status(403).json({ error: 'forbidden' });
+  } catch (e) {
+    console.log('⚠️ requireFinderOwner error', e);
+    return res.status(500).json({ error: 'owner_check_failed' });
+  }
+}
+
 // ------------------ TEST ROUTE ------------------
 app.get("/test", (req, res) => {
   res.send("Backend is working!");
@@ -521,10 +593,10 @@ function safeFileName(original = 'upload.jpg', prefix = '') {
   return `${prefix}${Date.now()}-${cleaned}`;
 }
 
-async function uploadBufferToStorage(path, buffer, mimeType = 'application/octet-stream') {
+async function uploadBufferToStorage(path, buffer, mimeType = 'application/octet-stream', { upsert = false } = {}) {
   const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, buffer, {
     contentType: mimeType,
-    upsert: false,
+    upsert,
   });
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
@@ -535,6 +607,9 @@ async function uploadBufferToStorage(path, buffer, mimeType = 'application/octet
 app.post('/found-items', upload.single('image'), async (req, res) => {
   try {
     const { itemName, description, locationFound, dateFound, finderContact, finderPhone } = req.body || {};
+    const finderIdRaw = (req.body?.finderId || req.body?.finder_id || '').toString();
+    const finderId = normalizeIdentifier(finderIdRaw);
+    const normalizedFinderPhone = finderPhone ? finderPhone.toString().replace(/\D+/g, '') : null;
     if (!itemName) return res.status(400).json({ error: 'missing_item_name' });
     if (!req.file) return res.status(400).json({ error: 'missing_image' });
 
@@ -549,7 +624,8 @@ app.post('/found-items', upload.single('image'), async (req, res) => {
       image_url: imageUrl,
       status: 'unclaimed',
       finder_contact: finderContact || null,
-      finder_phone: finderPhone ? finderPhone.toString() : null,
+      finder_phone: normalizedFinderPhone,
+      finder_id: finderId || null,
     };
 
     const { data, error } = await supabase.from('found_items').insert([payload]).select().single();
@@ -567,6 +643,7 @@ app.get('/found-items', async (req, res) => {
     const status = (req.query.status || '').toString().toLowerCase();
     const finderContact = (req.query.finderContact || '').toString().toLowerCase();
     const finderPhoneRaw = (req.query.finderPhone || '').toString();
+    const finderIdFilter = normalizeIdentifier(req.query.finderId || '');
     const includeClaims = req.query.includeClaims === 'true';
     const normalizePhone = (val) => (val ? val.replace(/\D+/g, '') : '');
 
@@ -584,6 +661,9 @@ app.get('/found-items', async (req, res) => {
     const finderPhone = normalizePhone(finderPhoneRaw);
     if (finderPhone) {
       query = query.eq('finder_phone', finderPhone);
+    }
+    if (finderIdFilter) {
+      query = query.eq('finder_id', finderIdFilter);
     }
 
     const { data, error } = await query;
@@ -633,6 +713,8 @@ app.get('/found-items', async (req, res) => {
 app.post('/found-item-claims', upload.single('proofPhoto'), async (req, res) => {
   try {
     const { foundItemId, claimantContact, claimantName } = req.body || {};
+    const claimantIdRaw = (req.body?.claimantId || req.body?.claimant_id || '').toString();
+    const claimantId = normalizeIdentifier(claimantIdRaw);
     if (!foundItemId) return res.status(400).json({ error: 'missing_found_item_id' });
     if (!claimantContact) return res.status(400).json({ error: 'missing_contact' });
     if (!req.file) return res.status(400).json({ error: 'missing_proof_photo' });
@@ -646,6 +728,7 @@ app.post('/found-item-claims', upload.single('proofPhoto'), async (req, res) => 
       claimant_name: claimantName || null,
       proof_photo_url: proofUrl,
       status: 'pending',
+      claimant_id: claimantId || null,
     };
 
     const { data, error } = await supabase.from('found_item_claims').insert([payload]).select().single();
@@ -677,9 +760,11 @@ async function attachFoundItemsToClaims(claims) {
 app.get('/found-item-claims', async (req, res) => {
   try {
     const claimantContact = (req.query.claimantContact || '').toString().toLowerCase();
+    const claimantId = normalizeIdentifier(req.query.claimantId || '');
     const admin = req.query.admin === 'true';
     const finderContact = (req.query.finderContact || '').toString().toLowerCase();
     const finderPhoneRaw = (req.query.finderPhone || '').toString();
+    const finderIdFilter = normalizeIdentifier(req.query.finderId || '');
     const normalizePhone = (val) => (val ? val.toString().replace(/\D+/g, '') : '');
     const finderPhone = normalizePhone(finderPhoneRaw);
     const collectIds = (input) => {
@@ -695,10 +780,11 @@ app.get('/found-item-claims', async (req, res) => {
 
     const providedFoundItemIds = collectIds(req.query.foundItemIds || req.query.foundItemId || []);
     let finderItemIds = [];
-    if (finderContact || finderPhone) {
+    if (finderContact || finderPhone || finderIdFilter) {
       const finderQuery = supabase.from('found_items').select('id');
       if (finderContact) finderQuery.ilike('finder_contact', finderContact);
       if (finderPhone) finderQuery.eq('finder_phone', finderPhone);
+      if (finderIdFilter) finderQuery.eq('finder_id', finderIdFilter);
       const { data: finderItems, error: finderErr } = await finderQuery;
       if (finderErr) throw finderErr;
       finderItemIds = (finderItems || [])
@@ -718,11 +804,14 @@ app.get('/found-item-claims', async (req, res) => {
     if (claimantContact) {
       query = query.ilike('claimant_contact', claimantContact);
     }
+    if (claimantId) {
+      query = query.eq('claimant_id', claimantId);
+    }
     if (foundItemIdsFilter.length > 0) {
       query = query.in('found_item_id', foundItemIdsFilter);
     }
-    const hasFinderFilter = finderContact || finderPhone || foundItemIdsFilter.length > 0;
-    if (!admin && !claimantContact && !hasFinderFilter) {
+    const hasFinderFilter = finderContact || finderPhone || finderIdFilter || foundItemIdsFilter.length > 0;
+    if (!admin && !claimantContact && !claimantId && !hasFinderFilter) {
       return res.json([]);
     }
 
@@ -771,6 +860,92 @@ app.patch('/found-item-claims/:id', async (req, res) => {
 
     res.json({ ok: true, claim: data });
   } catch (e) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// PATCH /found-items/:id (finder-managed updates)
+app.patch('/found-items/:id', requireFinderOwner, upload.single('image'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'invalid_id' });
+
+    const updates = {};
+    const map = {
+      itemName: 'item_name',
+      description: 'description',
+      locationFound: 'location_found',
+      dateFound: 'date_found',
+      status: 'status',
+      finderContact: 'finder_contact',
+      finderId: 'finder_id',
+    };
+
+    for (const [bodyKey, column] of Object.entries(map)) {
+      if (req.body?.[bodyKey] !== undefined) {
+        let value = req.body[bodyKey];
+        if (column === 'finder_id') {
+          value = normalizeIdentifier(value);
+        }
+        updates[column] = value === '' ? null : value;
+      }
+    }
+
+    if (req.body?.finderPhone !== undefined) {
+      const digits = req.body.finderPhone ? req.body.finderPhone.toString().replace(/\D+/g, '') : '';
+      updates.finder_phone = digits || null;
+    }
+
+    if (req.file) {
+      const storagePath = `${FOUND_ITEM_FOLDER}/${safeFileName(req.file.originalname, `${id}-edit-`)}`;
+      const newUrl = await uploadBufferToStorage(storagePath, req.file.buffer, req.file.mimetype || 'image/jpeg');
+      updates.image_url = newUrl;
+      if (req.foundItem?.image_url) {
+        deleteStorageAssetByUrl(req.foundItem.image_url).catch(() => {});
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'no_updates' });
+    }
+
+    const { data, error } = await supabase
+      .from('found_items')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+
+    res.json({ ok: true, item: data });
+  } catch (e) {
+    console.log('⚠️ found item update error', e);
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// DELETE /found-items/:id
+app.delete('/found-items/:id', requireFinderOwner, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'invalid_id' });
+
+    if (req.foundItem?.image_url) {
+      await deleteStorageAssetByUrl(req.foundItem.image_url);
+    }
+
+    try {
+      await supabase.from('found_item_claims').delete().eq('found_item_id', id);
+    } catch (e) {
+      console.log('⚠️ failed to delete found item claims for', id, e);
+    }
+
+    const { error } = await supabase.from('found_items').delete().eq('id', id);
+    if (error) throw error;
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.log('⚠️ found item delete error', e);
     res.status(500).json({ error: e.message || String(e) });
   }
 });

@@ -20,6 +20,15 @@ export default function FoundMyClaims({ claims = [], loading = false }) {
               </div>
               <div className="text-sm text-gray-600">
                 <div>Status: {status}</div>
+                {status === 'pending' && (
+                  <div className="text-xs text-yellow-600">Waiting for finder approval</div>
+                )}
+                {status === 'rejected' && (
+                  <div className="text-xs text-red-600">Rejected</div>
+                )}
+                {status === 'approved' && (
+                  <div className="text-xs text-green-600">Finder approved your claim</div>
+                )}
                 <div>Submitted: {claim.created_at ? new Date(claim.created_at).toLocaleString() : 'Unknown'}</div>
               </div>
             </div>
@@ -38,7 +47,7 @@ export default function FoundMyClaims({ claims = [], loading = false }) {
               </div>
             )}
             {status === 'rejected' && (
-              <div className="mt-4 text-sm text-red-600 font-medium">Request Rejected.</div>
+              <div className="mt-4 text-sm text-red-600 font-medium">Rejected</div>
             )}
           </div>
         );

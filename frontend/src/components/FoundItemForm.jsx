@@ -26,6 +26,7 @@ export default function FoundItemForm({ onSubmitted, user }) {
       setMessage({ type: "error", text: "Please upload an image." });
       return;
     }
+    const finderId = (user?.id || user?.email || user?.phone || "").toString().trim().toLowerCase();
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -35,6 +36,9 @@ export default function FoundItemForm({ onSubmitted, user }) {
       fd.append("dateFound", form.dateFound);
       fd.append("finderContact", form.finderContact);
       fd.append("finderPhone", form.finderPhone);
+      if (finderId) {
+        fd.append("finderId", finderId);
+      }
       fd.append("image", imageFile);
       const res = await fetch(API.url("/found-items"), {
         method: "POST",

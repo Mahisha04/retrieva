@@ -28,15 +28,16 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
                 Feed
               </button>
 
-              <button
-                className={`px-3 py-2 rounded ${activeTab === 'lost-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
-                onClick={() => onSetTab && onSetTab('lost-board')}
-              >
-                Lost Items
-              </button>
 
               <button
-                className={`px-3 py-2 rounded ${activeTab === 'found-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+
+              <button
+                className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                onClick={() => onSetTab && onSetTab('found-my-claims')}
+              >
+                My Found Claims
+              </button>
                 onClick={() => onSetTab && onSetTab('found-board')}
               >
                 Found Items
