@@ -22,7 +22,6 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
           (finderContact && currentUserEmail && finderContact === currentUserEmail) ||
           (finderPhone && currentUserPhone && finderPhone === currentUserPhone)
         );
-        const isDeleting = deletingId && String(deletingId) === String(item.id);
         const claims = Array.isArray(item?.found_item_claims) ? item.found_item_claims : [];
         const pendingClaim = isFinderOwner && claims.some((claim) => (claim?.status || 'pending') === 'pending');
         const approvedClaim = isFinderOwner && claims.some((claim) => (claim?.status || '') === 'approved');
@@ -60,26 +59,7 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
                   Claim approved. Coordinate with the owner to hand over the item.
                 </div>
               )}
-              {isFinderOwner ? (
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    type="button"
-                    onClick={() => onEdit && onEdit(item)}
-                    disabled={!onEdit}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-red-600 text-white rounded"
-                    type="button"
-                    onClick={() => onDelete && onDelete(item)}
-                    disabled={!onDelete || isDeleting}
-                  >
-                    {isDeleting ? 'Deleting…' : 'Delete'}
-                  </button>
-                </div>
-              ) : (
+              {!isFinderOwner && (
                 <button
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded"
                   onClick={() => onClaim && onClaim(item)}
