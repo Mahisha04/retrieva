@@ -57,6 +57,13 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
               </button>
 
               <button
+                className={`px-3 py-2 rounded ${activeTab === 'found-my-items' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                onClick={() => onSetTab && onSetTab('found-my-items')}
+              >
+                My Found Items
+              </button>
+
+              <button
                 className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
                 onClick={() => onSetTab && onSetTab('found-my-claims')}
               >

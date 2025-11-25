@@ -31,6 +31,9 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   const [myFoundClaims, setMyFoundClaims] = useState([]);
   const [loadingMyFoundClaims, setLoadingMyFoundClaims] = useState(false);
   const [claimModalItem, setClaimModalItem] = useState(null);
+  const [myFoundItems, setMyFoundItems] = useState([]);
+  const [loadingMyFoundItems, setLoadingMyFoundItems] = useState(false);
+  const [finderDecisionClaimId, setFinderDecisionClaimId] = useState(null);
   const storageKey = useMemo(() => {
     const email = (user?.email || '').toLowerCase().trim();
     if (email) return `myItemIds:${email}`;
@@ -257,6 +260,30 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
   }, []);
 
+  const loadMyFoundItems = useCallback(async () => {
+    const contact = (user?.email || '').toLowerCase();
+    const phoneDigits = (user?.phone || '').toString().replace(/\D+/g, '');
+    if (!contact && !phoneDigits) {
+      setMyFoundItems([]);
+      return;
+    }
+    setLoadingMyFoundItems(true);
+    try {
+      const params = new URLSearchParams();
+      if (contact) params.append('finderContact', contact);
+      if (phoneDigits) params.append('finderPhone', phoneDigits);
+      params.append('includeClaims', 'true');
+      const suffix = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(API.url(`/found-items${suffix}`));
+      const data = await res.json();
+      setMyFoundItems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setMyFoundItems([]);
+    } finally {
+      setLoadingMyFoundItems(false);
+    }
+  }, [user]);
+
   const loadMyFoundClaims = useCallback(async () => {
     const contact = (user?.email || '').toLowerCase();
     if (!contact) {
@@ -308,6 +335,29 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
   }, [loadAllFoundClaims, loadMyFoundClaims, loadFoundItems]);
 
+  const handleFinderClaimDecision = useCallback(async (claimId, action) => {
+    if (!claimId || !action) return;
+    setFinderDecisionClaimId(claimId);
+    try {
+      const res = await fetch(API.url(`/found-item-claims/${claimId}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || 'Failed to update claim');
+      }
+      loadMyFoundItems();
+      loadFoundItems('unclaimed');
+      loadMyFoundClaims();
+    } catch (e) {
+      alert(e.message || 'Unable to update claim');
+    } finally {
+      setFinderDecisionClaimId(null);
+    }
+  }, [loadMyFoundItems, loadFoundItems, loadMyFoundClaims]);
+
   const handleFoundClaimSubmitted = useCallback(() => {
     setClaimModalItem(null);
     loadMyFoundClaims();
@@ -321,10 +371,13 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     if (tab === 'found-my-claims') {
       loadMyFoundClaims();
     }
+    if (tab === 'found-my-items') {
+      loadMyFoundItems();
+    }
     if (tab === 'found-approvals' && isAdmin) {
       loadAllFoundClaims();
     }
-  }, [tab, loadFoundItems, loadMyFoundClaims, loadAllFoundClaims, isAdmin]);
+  }, [tab, loadFoundItems, loadMyFoundClaims, loadAllFoundClaims, loadMyFoundItems, isAdmin]);
 
   useEffect(() => {
     if (!isAdmin && tab === 'found-approvals') {
@@ -493,6 +546,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   user={user}
                   onSubmitted={() => {
                     loadFoundItems('unclaimed');
+                    loadMyFoundItems();
                     alert('Found item submitted. We will list it in the unclaimed board.');
                   }}
                 />
@@ -517,6 +571,26 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   items={unclaimedFoundItems}
                   loading={loadingFoundItems}
                   onClaim={(item) => setClaimModalItem(item)}
+                />
+              </div>
+            )}
+
+            {tab === 'found-my-items' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">My Found Items</h3>
+                  <button
+                    className="text-sm text-teal-600 hover:underline"
+                    onClick={loadMyFoundItems}
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <FinderFoundItemsBoard
+                  items={myFoundItems}
+                  loading={loadingMyFoundItems}
+                  onDecision={handleFinderClaimDecision}
+                  updatingClaimId={finderDecisionClaimId}
                 />
               </div>
             )}
@@ -655,6 +729,102 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       ) : null}
 
       {!user && <ContactSection />}
+    </div>
+  );
+}
+
+function FinderFoundItemsBoard({ items = [], loading = false, onDecision, updatingClaimId }) {
+  if (loading) {
+    return <div className="text-gray-500">Loading your found items…</div>;
+  }
+  if (!items || items.length === 0) {
+    return <div className="text-gray-500">You have not reported any found items yet.</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      {items.map((item) => {
+        const claims = Array.isArray(item.found_item_claims) ? [...item.found_item_claims] : [];
+        claims.sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0));
+        const latestClaim = claims[0] || null;
+        const claimStatus = latestClaim?.status || null;
+        let statusCopy = 'No claims yet';
+        if (claimStatus === 'pending') {
+          statusCopy = 'Owner requested this item — Pending your approval';
+        } else if (claimStatus === 'approved') {
+          statusCopy = 'Owner verified. Contact owner to return item.';
+        } else if (claimStatus === 'rejected') {
+          statusCopy = 'You rejected this claim';
+        }
+        const claimId = latestClaim?.claim_id || latestClaim?.id || null;
+        const isUpdating = claimId && updatingClaimId && String(claimId) === String(updatingClaimId);
+
+        return (
+          <div key={item.id} className="border rounded-xl bg-white shadow-sm p-5">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="text-xs uppercase text-gray-500">Item</div>
+                <div className="text-lg font-semibold text-gray-900">{item.item_name || `Item #${item.id}`}</div>
+                <div className="text-sm text-gray-600 mt-1">{item.description || 'No description provided.'}</div>
+                <div className="text-xs text-gray-500 mt-1">Location: {item.location_found || 'Unknown'}</div>
+                <div className="text-xs text-gray-500">Status: {(item.status || 'unclaimed').toUpperCase()}</div>
+              </div>
+              <div className="w-full md:w-40 h-40 bg-gray-100 rounded-lg overflow-hidden border">
+                {item.image_url ? (
+                  <img src={item.image_url} alt={item.item_name || 'Found item'} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No image</div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 text-sm font-medium text-gray-800">{statusCopy}</div>
+
+            {latestClaim && (
+              <div className="mt-3 text-sm text-gray-600">
+                <div className="font-semibold text-gray-700">Latest claim details</div>
+                <div>Owner: {latestClaim.claimant_name || 'Unknown owner'}</div>
+                <div>Contact: {latestClaim.claimant_contact || 'Not provided'}</div>
+                <div>Submitted: {latestClaim.created_at ? new Date(latestClaim.created_at).toLocaleString() : 'Unknown'}</div>
+              </div>
+            )}
+
+            {latestClaim?.proof_photo_url && (
+              <div className="mt-3">
+                <div className="text-xs uppercase text-gray-500 mb-1">Proof Photo</div>
+                <img src={latestClaim.proof_photo_url} alt="Proof" className="w-full max-h-72 object-cover rounded-lg border" />
+              </div>
+            )}
+
+            {claimStatus === 'approved' && (
+              <div className="mt-4 p-4 border border-green-200 rounded-lg bg-green-50 text-gray-900">
+                <div className="text-xs uppercase text-gray-600">Owner Contact</div>
+                <div className="text-base font-semibold">{latestClaim.claimant_contact || 'Not provided'}</div>
+                {latestClaim.claimant_name && <div className="text-sm">{latestClaim.claimant_name}</div>}
+              </div>
+            )}
+
+            {claimStatus === 'pending' && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  className="px-4 py-2 bg-green-600 text-white rounded"
+                  disabled={!onDecision || isUpdating}
+                  onClick={() => claimId && onDecision && onDecision(claimId, 'approve')}
+                >
+                  {isUpdating && onDecision ? 'Approving…' : 'Approve Claim'}
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded"
+                  disabled={!onDecision || isUpdating}
+                  onClick={() => claimId && onDecision && onDecision(claimId, 'reject')}
+                >
+                  {isUpdating && onDecision ? 'Rejecting…' : 'Reject Claim'}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

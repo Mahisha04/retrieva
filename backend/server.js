@@ -561,17 +561,69 @@ app.post('/found-items', upload.single('image'), async (req, res) => {
   }
 });
 
-// GET /found-items?status=unclaimed
+// GET /found-items?status=unclaimed&finderContact=email&includeClaims=true
 app.get('/found-items', async (req, res) => {
   try {
     const status = (req.query.status || '').toString().toLowerCase();
-    let query = supabase.from('found_items').select('*').order('created_at', { ascending: false });
+    const finderContact = (req.query.finderContact || '').toString().toLowerCase();
+    const finderPhoneRaw = (req.query.finderPhone || '').toString();
+    const includeClaims = req.query.includeClaims === 'true';
+    const normalizePhone = (val) => (val ? val.replace(/\D+/g, '') : '');
+
+    let query = supabase
+      .from('found_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+
     if (status) {
       query = query.eq('status', status);
     }
+    if (finderContact) {
+      query = query.ilike('finder_contact', finderContact);
+    }
+    const finderPhone = normalizePhone(finderPhoneRaw);
+    if (finderPhone) {
+      query = query.eq('finder_phone', finderPhone);
+    }
+
     const { data, error } = await query;
     if (error) throw error;
-    res.json(data || []);
+
+    let rows = data || [];
+    if (includeClaims && Array.isArray(rows) && rows.length > 0) {
+      const itemIds = rows
+        .map((entry) => (entry && entry.id !== undefined && entry.id !== null ? Number(entry.id) : null))
+        .filter((id) => id);
+      if (itemIds.length > 0) {
+        try {
+          const { data: claimRows, error: claimErr } = await supabase
+            .from('found_item_claims')
+            .select('*')
+            .in('found_item_id', itemIds);
+          if (claimErr) throw claimErr;
+          const grouped = new Map();
+          (claimRows || []).forEach((claim) => {
+            const fid = claim && claim.found_item_id !== undefined && claim.found_item_id !== null
+              ? Number(claim.found_item_id)
+              : null;
+            if (!fid) return;
+            if (!grouped.has(fid)) grouped.set(fid, []);
+            grouped.get(fid).push(claim);
+          });
+          rows = rows.map((entry) => {
+            const entryId = entry && entry.id !== undefined && entry.id !== null ? Number(entry.id) : null;
+            return {
+              ...entry,
+              found_item_claims: entryId && grouped.get(entryId) ? grouped.get(entryId) : [],
+            };
+          });
+        } catch (claimsErr) {
+          console.log('⚠️ failed to attach found item claims', claimsErr);
+        }
+      }
+    }
+
+    res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message || String(e) });
   }
@@ -626,13 +678,54 @@ app.get('/found-item-claims', async (req, res) => {
   try {
     const claimantContact = (req.query.claimantContact || '').toString().toLowerCase();
     const admin = req.query.admin === 'true';
+    const finderContact = (req.query.finderContact || '').toString().toLowerCase();
+    const finderPhoneRaw = (req.query.finderPhone || '').toString();
+    const normalizePhone = (val) => (val ? val.toString().replace(/\D+/g, '') : '');
+    const finderPhone = normalizePhone(finderPhoneRaw);
+    const collectIds = (input) => {
+      if (!input) return [];
+      if (Array.isArray(input)) {
+        return input.flatMap((entry) => collectIds(entry));
+      }
+      return String(input)
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean);
+    };
+
+    const providedFoundItemIds = collectIds(req.query.foundItemIds || req.query.foundItemId || []);
+    let finderItemIds = [];
+    if (finderContact || finderPhone) {
+      const finderQuery = supabase.from('found_items').select('id');
+      if (finderContact) finderQuery.ilike('finder_contact', finderContact);
+      if (finderPhone) finderQuery.eq('finder_phone', finderPhone);
+      const { data: finderItems, error: finderErr } = await finderQuery;
+      if (finderErr) throw finderErr;
+      finderItemIds = (finderItems || [])
+        .map((item) => (item && item.id !== undefined && item.id !== null ? Number(item.id) : null))
+        .filter((id) => id);
+      if (finderItemIds.length === 0) {
+        return res.json([]);
+      }
+    }
+
+    const foundItemIdsFilter = Array.from(new Set([
+      ...providedFoundItemIds.map((id) => Number(id)).filter((id) => id),
+      ...finderItemIds,
+    ]));
+
     let query = supabase.from('found_item_claims').select('*').order('created_at', { ascending: false });
     if (claimantContact) {
       query = query.ilike('claimant_contact', claimantContact);
     }
-    if (!admin && !claimantContact) {
+    if (foundItemIdsFilter.length > 0) {
+      query = query.in('found_item_id', foundItemIdsFilter);
+    }
+    const hasFinderFilter = finderContact || finderPhone || foundItemIdsFilter.length > 0;
+    if (!admin && !claimantContact && !hasFinderFilter) {
       return res.json([]);
     }
+
     const { data, error } = await query;
     if (error) throw error;
     const enriched = await attachFoundItemsToClaims(data || []);
@@ -658,14 +751,21 @@ app.patch('/found-item-claims/:id', async (req, res) => {
       .single();
     if (error) throw error;
 
-    if (status === 'approved' && data?.found_item_id) {
+    if (data?.found_item_id) {
       try {
-        await supabase
-          .from('found_items')
-          .update({ status: 'claimed' })
-          .eq('id', data.found_item_id);
+        if (status === 'approved') {
+          await supabase
+            .from('found_items')
+            .update({ status: 'claimed' })
+            .eq('id', data.found_item_id);
+        } else if (status === 'rejected') {
+          await supabase
+            .from('found_items')
+            .update({ status: 'unclaimed' })
+            .eq('id', data.found_item_id);
+        }
       } catch (e) {
-        console.log('⚠️ failed to mark found item claimed', e);
+        console.log('⚠️ failed to update found item status after claim decision', e);
       }
     }
 
