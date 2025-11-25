@@ -24,6 +24,8 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
           (finderPhone && currentUserPhone && finderPhone === currentUserPhone)
         );
         const claims = Array.isArray(item?.found_item_claims) ? item.found_item_claims : [];
+        const normalizedStatus = (item?.status || 'unclaimed').toLowerCase();
+        const canClaim = normalizedStatus === 'unclaimed' && !isFinderOwner;
         const pendingClaim = isFinderOwner && claims.some((claim) => (claim?.status || 'pending') === 'pending');
         const approvedClaim = isFinderOwner && claims.some((claim) => (claim?.status || '') === 'approved');
 
@@ -60,7 +62,7 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
                   Claim approved. Coordinate with the owner to hand over the item.
                 </div>
               )}
-              {!isFinderOwner && (
+              {canClaim && (
                 <button
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded"
                   onClick={() => onClaim && onClaim(item)}
@@ -68,6 +70,9 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
                 >
                   This is my item
                 </button>
+              )}
+              {!canClaim && !isFinderOwner && (
+                <div className="mt-4 text-sm text-gray-500">This item is no longer available to claim.</div>
               )}
             </div>
           </div>

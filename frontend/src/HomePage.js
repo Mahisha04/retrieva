@@ -496,6 +496,26 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
               </div>
             )}
 
+            {tab === 'returned-items' && (
+              <div id="returned-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">Items Returned</h3>
+                    <p className="text-sm text-gray-600">Matches that were completed after owners confirmed the hand-off.</p>
+                  </div>
+                </div>
+                {returnedItems.length === 0 ? (
+                  <div className="text-gray-500">No returned items yet.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {returnedItems.map((i) => (
+                      <ItemCard key={`returned-tab-${i.id}`} item={i} user={user} ownedIdSet={ownedIdSet} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {tab === 'listings' && (
               <div className="flex justify-start">
                 <div className="w-full md:w-2/3 lg:w-1/2">
