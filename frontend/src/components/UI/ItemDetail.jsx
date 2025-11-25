@@ -40,7 +40,9 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
   const trackedOwned = currentItem && currentItem.id !== undefined ? ownedIdSet?.has(String(currentItem.id)) : false;
   const canEdit = contactOwned || trackedOwned;
   const isOwner = canEdit;
-  const isLost = ((currentItem?.type || '').toLowerCase() === 'lost');
+  const normalizedType = (currentItem?.type || '').toLowerCase();
+  const isLost = normalizedType === 'lost';
+  const isReturned = normalizedType === 'returned';
   const storageKey = React.useMemo(() => {
     if (!user) return null;
     const email = (user.email || '').toLowerCase().trim();
@@ -178,9 +180,9 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
                     <div className="flex gap-3 mt-3">
                       {/* If this is a lost item, allow someone who found it to submit a request (finder flow).
                           Do not show a direct Claim button on lost items. */}
-                      {isLost ? (
-                        !isOwner && (
-                          <>
+                      {!isReturned && (
+                        isLost ? (
+                          !isOwner && (
                             <button
                               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded shadow-lg"
                               onClick={() => setClaimConfirmOpen(true)}
@@ -188,21 +190,19 @@ export default function ItemDetail({ item, onClose, user, ownedIdSet }) {
                               <Icons.ClaimIcon className="w-4 h-4 text-white" />
                               I Found This Item
                             </button>
-                            {/* If user is logged in but not owner, allow them to prove ownership using the security answer */}
-                            {/* Prove Ownership button removed for simpler finder flow */}
-                          </>
-                        )
-                      ) : (
-                        <>
+                          )
+                        ) : (
                           <button
                             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded shadow-lg"
                             onClick={() => setClaimConfirmOpen(true)}
                           >
                             <Icons.ClaimIcon className="w-4 h-4 text-white" />
-                              Claim Item
+                            Claim Item
                           </button>
-                          {/* Prove Ownership button removed for simpler finder flow */}
-                        </>
+                        )
+                      )}
+                      {isReturned && (
+                        <div className="text-sm text-gray-500">This listing is marked as returned; no further claims are needed.</div>
                       )}
 
                     {canEdit && (
