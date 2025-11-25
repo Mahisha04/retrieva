@@ -40,6 +40,7 @@ export default function Filters({
           <option>All Status</option>
           <option>Lost</option>
           <option>Found</option>
+          <option>Returned</option>
         </select>
 
         <select

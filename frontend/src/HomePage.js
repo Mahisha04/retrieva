@@ -203,6 +203,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   // Split filtered results into Lost vs Found for the feed
   const lostItems = (filtered || []).filter((i) => (i.type || "").toLowerCase() === "lost");
   const foundItems = (filtered || []).filter((i) => (i.type || "").toLowerCase() === "found");
+  const returnedItems = (filtered || []).filter((i) => (i.type || "").toLowerCase() === "returned");
 
   const handleGetStarted = useCallback(() => {
     const loginTrigger = document.querySelector('[data-auth-trigger="login"]');
@@ -434,6 +435,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     });
     const lost = userItems.filter(i => (i.type || '').toLowerCase() === 'lost');
     const found = userItems.filter(i => (i.type || '').toLowerCase() === 'found');
+    const returnedOwned = userItems.filter(i => (i.type || '').toLowerCase() === 'returned');
 
     return (
       <>
@@ -459,6 +461,16 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                     {lostItems.map((i) => (
                       <ItemCard key={i.id} item={i} user={user} ownedIdSet={ownedIdSet} />
                     ))}
+                  </div>
+                )}
+                {returnedItems.length > 0 && (
+                  <div className="mt-8">
+                    <h4 className="text-lg font-semibold mb-3">Items Returned</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {returnedItems.map((i) => (
+                        <ItemCard key={`returned-${i.id}`} item={i} user={user} ownedIdSet={ownedIdSet} />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -511,6 +523,19 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {found.map((i) => (
+                              <ItemCard key={i.id} item={i} user={user} ownedIdSet={ownedIdSet} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="text-lg font-semibold mb-3">Items Returned</h4>
+                        {returnedOwned.length === 0 ? (
+                          <div className="text-gray-500 text-sm">No items have been marked as returned yet.</div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {returnedOwned.map((i) => (
                               <ItemCard key={i.id} item={i} user={user} ownedIdSet={ownedIdSet} />
                             ))}
                           </div>
