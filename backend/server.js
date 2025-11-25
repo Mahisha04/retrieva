@@ -56,6 +56,26 @@ async function requireAuth(req, res, next) {
   }
 }
 
+async function getSupabaseUserFromRequest(req) {
+  const authHeader = req.headers.authorization || req.headers.Authorization || '';
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { user: null, error: 'missing_authorization' };
+  }
+  const token = authHeader.split(' ')[1]?.trim();
+  if (!token) {
+    return { user: null, error: 'missing_authorization' };
+  }
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) {
+      return { user: null, error: error?.message || 'invalid_token' };
+    }
+    return { user: data.user, error: null };
+  } catch (e) {
+    return { user: null, error: e.message || 'auth_error' };
+  }
+}
+
 // --- Require owner middleware ---
 async function requireOwner(req, res, next) {
   try {
@@ -606,9 +626,12 @@ async function uploadBufferToStorage(path, buffer, mimeType = 'application/octet
 // POST /found-items
 app.post('/found-items', upload.single('image'), async (req, res) => {
   try {
+    const authResult = await getSupabaseUserFromRequest(req);
+    if (authResult.error || !authResult.user?.id) {
+      return res.status(401).json({ error: 'auth_required', details: authResult.error || null });
+    }
+
     const { itemName, description, locationFound, dateFound, finderContact, finderPhone } = req.body || {};
-    const finderIdRaw = (req.body?.finderId || req.body?.finder_id || '').toString();
-    const finderId = normalizeIdentifier(finderIdRaw);
     const normalizedFinderPhone = finderPhone ? finderPhone.toString().replace(/\D+/g, '') : null;
     if (!itemName) return res.status(400).json({ error: 'missing_item_name' });
     if (!req.file) return res.status(400).json({ error: 'missing_image' });
@@ -619,13 +642,13 @@ app.post('/found-items', upload.single('image'), async (req, res) => {
     const payload = {
       item_name: itemName,
       description: description || null,
+      finder_contact: finderContact || authResult.user.email || null,
+      finder_phone: normalizedFinderPhone,
       location_found: locationFound || null,
       date_found: dateFound || null,
       image_url: imageUrl,
+      finder_id: authResult.user.id,
       status: 'unclaimed',
-      finder_contact: finderContact || null,
-      finder_phone: normalizedFinderPhone,
-      finder_id: finderId || null,
     };
 
     const { data, error } = await supabase.from('found_items').insert([payload]).select().single();
