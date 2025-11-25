@@ -827,25 +827,6 @@ function FinderFoundItemsBoard({ items = [], loading = false, onDecision, updati
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-3">
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-                type="button"
-                onClick={() => onEdit && onEdit(item)}
-                disabled={!onEdit}
-              >
-                Edit
-              </button>
-              <button
-                className="px-4 py-2 bg-red-600 text-white rounded"
-                type="button"
-                onClick={() => onDelete && onDelete(item)}
-                disabled={!onDelete || (deletingId && String(deletingId) === String(item.id))}
-              >
-                {deletingId && String(deletingId) === String(item.id) ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-
             <div className="mt-4 text-sm font-medium text-gray-800">{statusCopy}</div>
 
             {latestClaim && (
