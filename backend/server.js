@@ -627,12 +627,10 @@ async function uploadBufferToStorage(path, buffer, mimeType = 'application/octet
 app.post('/found-items', upload.single('image'), async (req, res) => {
   try {
     const authResult = await getSupabaseUserFromRequest(req);
-    if (authResult.error || !authResult.user?.id) {
-      return res.status(401).json({ error: 'auth_required', details: authResult.error || null });
-    }
-
     const { itemName, description, locationFound, dateFound, finderContact, finderPhone } = req.body || {};
     const normalizedFinderPhone = finderPhone ? finderPhone.toString().replace(/\D+/g, '') : null;
+    const fallbackFinderIdRaw = (req.body?.finderId || req.body?.finder_id || '').toString();
+    const fallbackFinderId = normalizeIdentifier(fallbackFinderIdRaw);
     if (!itemName) return res.status(400).json({ error: 'missing_item_name' });
     if (!req.file) return res.status(400).json({ error: 'missing_image' });
 
@@ -642,18 +640,18 @@ app.post('/found-items', upload.single('image'), async (req, res) => {
     const payload = {
       item_name: itemName,
       description: description || null,
-      finder_contact: finderContact || authResult.user.email || null,
+      finder_contact: finderContact || authResult.user?.email || null,
       finder_phone: normalizedFinderPhone,
       location_found: locationFound || null,
       date_found: dateFound || null,
       image_url: imageUrl,
-      finder_id: authResult.user.id,
+      finder_id: authResult.user?.id || fallbackFinderId || null,
       status: 'unclaimed',
     };
 
     const { data, error } = await supabase.from('found_items').insert([payload]).select().single();
     if (error) throw error;
-    res.json({ ok: true, item: data });
+    res.json({ ok: true, item: data, authAttached: Boolean(authResult.user?.id) });
   } catch (e) {
     console.log('⚠️ found item create error', e);
     res.status(500).json({ error: e.message || String(e) });
