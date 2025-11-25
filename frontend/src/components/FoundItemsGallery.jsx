@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function FoundItemsGallery({ items = [], loading = false, onClaim, currentUser = null, onEdit, onDelete, deletingId = null }) {
+export default function FoundItemsGallery({ items = [], loading = false, onClaim, currentUser = null, onEdit, onDelete, deletingId = null, onReviewClaims }) {
   const currentUserId = (currentUser?.id || currentUser?.email || currentUser?.phone || "").toString().trim().toLowerCase();
   const currentUserEmail = (currentUser?.email || "").toString().trim().toLowerCase();
   const currentUserPhone = (currentUser?.phone || "").toString().replace(/\D+/g, "");
@@ -23,6 +23,9 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
           (finderPhone && currentUserPhone && finderPhone === currentUserPhone)
         );
         const isDeleting = deletingId && String(deletingId) === String(item.id);
+        const claims = Array.isArray(item?.found_item_claims) ? item.found_item_claims : [];
+        const pendingClaim = isFinderOwner && claims.some((claim) => (claim?.status || 'pending') === 'pending');
+        const approvedClaim = isFinderOwner && claims.some((claim) => (claim?.status || '') === 'approved');
 
         return (
           <div key={item.id} className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -38,6 +41,25 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
               <p className="text-sm text-gray-600 mt-1 flex-1">{item.description || 'No description provided.'}</p>
               <div className="text-xs text-gray-500 mt-2">Found at: {item.location_found || 'Unknown'}</div>
               <div className="text-xs text-gray-500">Date: {item.date_found || 'Unknown'}</div>
+              {isFinderOwner && pendingClaim && (
+                <div className="mt-3 p-3 border border-yellow-200 bg-yellow-50 rounded-lg text-sm text-yellow-900">
+                  Someone claimed this item and is waiting for your approval.
+                  {onReviewClaims && (
+                    <button
+                      type="button"
+                      className="ml-2 text-yellow-900 underline font-semibold"
+                      onClick={() => onReviewClaims(item)}
+                    >
+                      Review claim
+                    </button>
+                  )}
+                </div>
+              )}
+              {isFinderOwner && !pendingClaim && approvedClaim && (
+                <div className="mt-3 p-3 border border-green-200 bg-green-50 rounded-lg text-sm text-green-900">
+                  Claim approved. Coordinate with the owner to hand over the item.
+                </div>
+              )}
               {isFinderOwner ? (
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button

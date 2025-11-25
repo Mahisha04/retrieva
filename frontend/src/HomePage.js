@@ -250,10 +250,20 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
   }, [user, ensureTab, scrollToId, handleGetStarted]);
 
+  const handleReviewFinderClaims = useCallback(() => {
+    if (ensureTab('found-my-items')) {
+      setTimeout(() => scrollToId('finder-items-panel'), 150);
+    }
+  }, [ensureTab, scrollToId]);
+
   const loadFoundItems = useCallback(async (status = 'unclaimed') => {
     setLoadingFoundItems(true);
     try {
-      const res = await fetch(API.url(`/found-items${status ? `?status=${status}` : ''}`));
+      const params = new URLSearchParams();
+      if (status) params.append('status', status);
+      if (user) params.append('includeClaims', 'true');
+      const suffix = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(API.url(`/found-items${suffix}`));
       const data = await res.json();
       setUnclaimedFoundItems(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -261,7 +271,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     } finally {
       setLoadingFoundItems(false);
     }
-  }, []);
+  }, [user]);
 
   const loadMyFoundItems = useCallback(async () => {
     const contact = (user?.email || '').toLowerCase();
@@ -628,12 +638,13 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   onEdit={handleStartEditFoundItem}
                   onDelete={handleDeleteFoundItem}
                   deletingId={deletingFoundItemId}
+                  onReviewClaims={handleReviewFinderClaims}
                 />
               </div>
             )}
 
             {tab === 'found-my-items' && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div id="finder-items-panel" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold">My Found Items</h3>
                   <button
