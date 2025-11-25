@@ -198,7 +198,7 @@ async function deleteStorageAssetByUrl(url) {
 
 async function requireFinderOwner(req, res, next) {
   try {
-    const id = req.params.id || req.body.id;
+    const id = (req.params.id || req.body.id || '').toString().trim();
     if (!id) return res.status(400).json({ error: 'missing_id' });
 
     const { data, error } = await supabase.from('found_items').select('*').eq('id', id).single();
@@ -867,8 +867,8 @@ app.patch('/found-item-claims/:id', async (req, res) => {
 // PATCH /found-items/:id (finder-managed updates)
 app.patch('/found-items/:id', requireFinderOwner, upload.single('image'), async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    if (!id) return res.status(400).json({ error: 'invalid_id' });
+    const idParam = (req.params.id ?? '').toString().trim();
+    if (!idParam) return res.status(400).json({ error: 'invalid_id' });
 
     const updates = {};
     const map = {
@@ -897,7 +897,7 @@ app.patch('/found-items/:id', requireFinderOwner, upload.single('image'), async 
     }
 
     if (req.file) {
-      const storagePath = `${FOUND_ITEM_FOLDER}/${safeFileName(req.file.originalname, `${id}-edit-`)}`;
+      const storagePath = `${FOUND_ITEM_FOLDER}/${safeFileName(req.file.originalname, `${idParam}-edit-`)}`;
       const newUrl = await uploadBufferToStorage(storagePath, req.file.buffer, req.file.mimetype || 'image/jpeg');
       updates.image_url = newUrl;
       if (req.foundItem?.image_url) {
@@ -912,7 +912,7 @@ app.patch('/found-items/:id', requireFinderOwner, upload.single('image'), async 
     const { data, error } = await supabase
       .from('found_items')
       .update(updates)
-      .eq('id', id)
+      .eq('id', idParam)
       .select()
       .single();
     if (error) throw error;
@@ -927,20 +927,20 @@ app.patch('/found-items/:id', requireFinderOwner, upload.single('image'), async 
 // DELETE /found-items/:id
 app.delete('/found-items/:id', requireFinderOwner, async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    if (!id) return res.status(400).json({ error: 'invalid_id' });
+    const idParam = (req.params.id ?? '').toString().trim();
+    if (!idParam) return res.status(400).json({ error: 'invalid_id' });
 
     if (req.foundItem?.image_url) {
       await deleteStorageAssetByUrl(req.foundItem.image_url);
     }
 
     try {
-      await supabase.from('found_item_claims').delete().eq('found_item_id', id);
+      await supabase.from('found_item_claims').delete().eq('found_item_id', idParam);
     } catch (e) {
       console.log('⚠️ failed to delete found item claims for', id, e);
     }
 
-    const { error } = await supabase.from('found_items').delete().eq('id', id);
+    const { error } = await supabase.from('found_items').delete().eq('id', idParam);
     if (error) throw error;
 
     res.json({ ok: true });
