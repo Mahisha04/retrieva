@@ -43,6 +43,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     return phoneDigits ? `myItemIds:phone:${phoneDigits}` : null;
   }, [user]);
   const ownedIdSet = useMemo(() => new Set((myItemIds || []).map((id) => String(id))), [myItemIds]);
+  const ownedFoundIdSet = useMemo(() => new Set((myFoundItems || []).map((item) => String(item.id))), [myFoundItems]);
 
   useEffect(() => {
     if (activeTab && activeTab !== tab) {
@@ -401,6 +402,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   useEffect(() => {
     if (tab === 'found-unclaimed') {
       loadFoundItems('unclaimed');
+      loadMyFoundItems();
     }
     if (tab === 'found-my-claims') {
       loadMyFoundClaims();
@@ -607,6 +609,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   onEdit={handleStartEditFoundItem}
                   onDelete={handleDeleteFoundItem}
                   deletingId={deletingFoundItemId}
+                  ownedFoundIds={ownedFoundIdSet}
                   onReviewClaims={handleReviewFinderClaims}
                 />
               </div>

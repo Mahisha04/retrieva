@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function FoundItemsGallery({ items = [], loading = false, onClaim, currentUser = null, onEdit, onDelete, deletingId = null, onReviewClaims }) {
+export default function FoundItemsGallery({ items = [], loading = false, onClaim, currentUser = null, onEdit, onDelete, deletingId = null, onReviewClaims, ownedFoundIds }) {
   const currentUserId = (currentUser?.id || currentUser?.email || currentUser?.phone || "").toString().trim().toLowerCase();
   const currentUserEmail = (currentUser?.email || "").toString().trim().toLowerCase();
   const currentUserPhone = (currentUser?.phone || "").toString().replace(/\D+/g, "");
@@ -17,7 +17,8 @@ export default function FoundItemsGallery({ items = [], loading = false, onClaim
         const finderId = (item?.finder_id || "").toString().trim().toLowerCase();
         const finderContact = (item?.finder_contact || "").toString().trim().toLowerCase();
         const finderPhone = (item?.finder_phone || "").toString().replace(/\D+/g, "");
-        const isFinderOwner = Boolean(
+        const ownedSetHas = ownedFoundIds ? ownedFoundIds.has(String(item.id)) : false;
+        const isFinderOwner = ownedSetHas || Boolean(
           (finderId && currentUserId && finderId === currentUserId) ||
           (finderContact && currentUserEmail && finderContact === currentUserEmail) ||
           (finderPhone && currentUserPhone && finderPhone === currentUserPhone)
