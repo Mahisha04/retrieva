@@ -7,6 +7,18 @@ export default function ItemCard({ item, user, ownedIdSet }) {
   const [showContact, setShowContact] = useState(false);
   const isLost = ((item?.type || '').toLowerCase() === 'lost');
   const contactInfo = item?.contact || item?.contact_info || item?.email || null;
+  const normalize = (value) => (value || '').toString().trim().toLowerCase();
+  const normalizeDigits = (value) => (value || '').toString().replace(/\D+/g, '');
+  const itemIdKey = item?.id !== undefined && item?.id !== null ? String(item.id) : null;
+  const ownedBySet = itemIdKey && ownedIdSet ? ownedIdSet.has(itemIdKey) : false;
+  const normalizedContactEmail = normalize(contactInfo);
+  const normalizedUserEmail = normalize(user?.email);
+  const contactPhoneDigits = normalizeDigits(item?.contact_phone || item?.owner_phone || item?.phone || '');
+  const userPhoneDigits = normalizeDigits(user?.phone);
+  const matchesContact = normalizedContactEmail && normalizedUserEmail && normalizedContactEmail === normalizedUserEmail;
+  const matchesPhone = contactPhoneDigits && userPhoneDigits && contactPhoneDigits === userPhoneDigits;
+  const isOwnerView = Boolean(ownedBySet || matchesContact || matchesPhone);
+  const showContactCta = isLost && !isOwnerView;
 
   return (
     <>
@@ -46,7 +58,7 @@ export default function ItemCard({ item, user, ownedIdSet }) {
           </div>
           <div className="mt-2 text-xs text-gray-350">{new Date(item.created_at || item.createdAt || Date.now()).toLocaleDateString()}</div>
 
-          {isLost && (
+          {showContactCta && (
             <div className="mt-4">
               <button
                 type="button"
@@ -71,6 +83,9 @@ export default function ItemCard({ item, user, ownedIdSet }) {
                 </div>
               )}
             </div>
+          )}
+          {isOwnerView && (
+            <div className="mt-4 text-xs text-gray-500">You posted this listing.</div>
           )}
         </div>
       </div>
