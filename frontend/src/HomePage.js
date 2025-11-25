@@ -6,7 +6,6 @@ import AddItem from "./components/AddItem";
 import HowItWorks from "./components/UI/HowItWorks";
 import ContactSection from "./components/UI/ContactSection";
 import ProjectInspiration from "./components/UI/ProjectInspiration";
-import UseCases from "./components/UI/UseCases";
 import FoundItemForm from "./components/FoundItemForm";
 import FoundItemsGallery from "./components/FoundItemsGallery";
 import FoundClaimModal from "./components/FoundClaimModal";
@@ -23,7 +22,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   const [category, setCategory] = useState("All Categories");
   const [status, setStatus] = useState("All Status");
   const [sort, setSort] = useState("Date Reported");
-  const [tab, setTab] = useState(activeTab || 'feed');
+  const [tab, setTab] = useState(activeTab || 'lost-board');
   const [myItemIds, setMyItemIds] = useState([]);
   const [unclaimedFoundItems, setUnclaimedFoundItems] = useState([]);
   const [loadingFoundItems, setLoadingFoundItems] = useState(false);
@@ -220,35 +219,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     return true;
   }, [user, setActiveTab]);
 
-  const handleReportLostFlow = useCallback(() => {
-    if (!user) {
-      handleGetStarted();
-      return;
-    }
-    if (ensureTab('add')) {
-      setTimeout(() => scrollToId('report-lost-panel'), 120);
-    }
-  }, [user, ensureTab, scrollToId, handleGetStarted]);
-
-  const handleBrowseLostFlow = useCallback(() => {
-    if (!user) {
-      handleGetStarted();
-      return;
-    }
-    if (ensureTab('lost-board')) {
-      setTimeout(() => scrollToId('lost-board-section'), 120);
-    }
-  }, [user, ensureTab, scrollToId, handleGetStarted]);
-
-  const handleClaimFlow = useCallback(() => {
-    if (!user) {
-      handleGetStarted();
-      return;
-    }
-    if (ensureTab('responses')) {
-      setTimeout(() => scrollToId('owner-approvals'), 200);
-    }
-  }, [user, ensureTab, scrollToId, handleGetStarted]);
+  
 
   const handleReviewFinderClaims = useCallback(() => {
     if (ensureTab('found-my-items')) {
@@ -471,8 +442,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
           </div>
 
           <div className="mt-6 space-y-6">
-            {tab === 'feed' && null}
-
             {tab === 'lost-board' && (
               <div id="lost-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -723,12 +692,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       {!user && (
         <>
           <ProjectInspiration onGetStarted={handleGetStarted} />
-          <UseCases
-            user={user}
-            onReportLost={handleReportLostFlow}
-            onBrowseFeed={handleBrowseLostFlow}
-            onClaimFromFinder={handleClaimFlow}
-          />
           <HowItWorks />
         </>
       )}

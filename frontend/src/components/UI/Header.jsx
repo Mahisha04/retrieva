@@ -22,13 +22,6 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
           <>
             <div className="flex items-center gap-3">
               <button
-                className={`px-3 py-2 rounded ${activeTab === 'feed' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
-                onClick={() => onSetTab && onSetTab('feed')}
-              >
-                Feed
-              </button>
-
-              <button
                 className={`px-3 py-2 rounded ${activeTab === 'lost-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
                 onClick={() => onSetTab && onSetTab('lost-board')}
               >

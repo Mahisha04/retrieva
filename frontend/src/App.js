@@ -7,13 +7,15 @@ import HomePage from "./HomePage";
 import AddItem from "./components/AddItem";
 import { isFoundAdmin } from "./config";
 
+const DEFAULT_TAB = 'lost-board';
+
 const tabFromHash = () => {
-  if (typeof window === 'undefined' || !window.location) return 'feed';
+  if (typeof window === 'undefined' || !window.location) return DEFAULT_TAB;
   const hash = (window.location.hash || '').toLowerCase();
   if (hash.includes('finder-responses') || hash.includes('responses')) {
     return 'responses';
   }
-  return 'feed';
+  return DEFAULT_TAB;
 };
 
 const deriveUserId = (payload) => {
