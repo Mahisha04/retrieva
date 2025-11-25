@@ -868,14 +868,16 @@ app.patch('/found-item-claims/:id', async (req, res) => {
             .from('found_items')
             .update({ status: 'claimed' })
             .eq('id', data.found_item_id);
-        } else if (status === 'rejected') {
-          await supabase
-            .from('found_items')
-            .update({ status: 'unclaimed' })
-            .eq('id', data.found_item_id);
-        }
-      } catch (e) {
-        console.log('⚠️ failed to update found item status after claim decision', e);
+        const authResult = await getSupabaseUserFromRequest(req);
+        const authUserId = authResult?.user?.id ? normalizeIdentifier(authResult.user.id) : null;
+        const payload = {
+          found_item_id: Number(foundItemId),
+          claimant_contact: claimantContact,
+          claimant_name: claimantName || null,
+          proof_photo_url: proofUrl,
+          status: 'pending',
+          claimant_id: authUserId || claimantId || null,
+        };
       }
     }
 
