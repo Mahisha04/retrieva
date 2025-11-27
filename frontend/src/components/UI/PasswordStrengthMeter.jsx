@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import zxcvbn from "zxcvbn";
 
 const LEVELS = [
@@ -9,7 +9,7 @@ const LEVELS = [
   { label: "Very Strong", barClass: "bg-emerald-500", textClass: "text-emerald-300" }
 ];
 
-export default function PasswordStrengthMeter({ password = "" }) {
+export default function PasswordStrengthMeter({ password = "", onFeedback }) {
   const analysis = useMemo(() => {
     if (!password) return null;
     return zxcvbn(password);
@@ -33,6 +33,16 @@ export default function PasswordStrengthMeter({ password = "" }) {
     }
     return tips.slice(0, 3);
   }, [analysis, password]);
+
+  useEffect(() => {
+    if (typeof onFeedback === "function") {
+      onFeedback({
+        score,
+        label: password ? level.label : null,
+        suggestions
+      });
+    }
+  }, [level.label, onFeedback, password, score, suggestions]);
 
   return (
     <div className="mt-2 space-y-2 text-sm">

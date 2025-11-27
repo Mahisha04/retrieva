@@ -1,5 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
+import { generatePasswordIdeas } from "../../utils/passwordIdeas";
+
+const MIN_PASSWORD_SCORE = 2;
 
 export default function ForgotPasswordModal({ initialEmail = "", onClose, onResetComplete }) {
   const [email, setEmail] = useState(initialEmail);
@@ -8,6 +11,22 @@ export default function ForgotPasswordModal({ initialEmail = "", onClose, onRese
   const [status, setStatus] = useState(null);
   const [savedEmails, setSavedEmails] = useState([]);
   const [lastResetEmail, setLastResetEmail] = useState(null);
+  const [passwordScore, setPasswordScore] = useState(0);
+  const [recommendedPasswords, setRecommendedPasswords] = useState([]);
+
+  const handleStrengthFeedback = useCallback(({ score = 0 } = {}) => {
+    setPasswordScore(score);
+  }, []);
+
+  useEffect(() => {
+    if (!newPassword || passwordScore >= MIN_PASSWORD_SCORE) {
+      setRecommendedPasswords([]);
+      return;
+    }
+    setRecommendedPasswords((prev) => (prev.length ? prev : generatePasswordIdeas()));
+  }, [newPassword, passwordScore]);
+
+  const isPasswordWeak = Boolean(newPassword) && passwordScore < MIN_PASSWORD_SCORE;
 
   useEffect(() => {
     setEmail(initialEmail || "");
@@ -48,6 +67,10 @@ export default function ForgotPasswordModal({ initialEmail = "", onClose, onRese
     }
     if (newPassword.length < 6) {
       setStatus({ ok: false, message: "New password must be at least 6 characters long." });
+      return;
+    }
+    if (passwordScore < MIN_PASSWORD_SCORE) {
+      setStatus({ ok: false, message: "Weak password detected. Please choose a stronger password." });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -137,7 +160,25 @@ export default function ForgotPasswordModal({ initialEmail = "", onClose, onRese
             placeholder="New Password"
             className={inputClass}
           />
-          <PasswordStrengthMeter password={newPassword} />
+          <div className="space-y-3">
+            <PasswordStrengthMeter password={newPassword} onFeedback={handleStrengthFeedback} />
+            {isPasswordWeak && recommendedPasswords.length > 0 && (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100">
+                <p className="font-semibold text-red-200">Weak password</p>
+                <p className="text-red-100/90">Try one of these stronger patterns:</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {recommendedPasswords.map((idea) => (
+                    <span
+                      key={idea}
+                      className="rounded-full border border-white/30 bg-white/10 px-3 py-1 font-mono text-xs text-white"
+                    >
+                      {idea}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <input
             type="password"
@@ -156,7 +197,10 @@ export default function ForgotPasswordModal({ initialEmail = "", onClose, onRese
 
           <button
             type="submit"
-            className="w-full rounded-full bg-gradient-to-r from-lime-300 to-lime-500 text-indigo-900 font-semibold py-3 shadow-lg hover:opacity-95 transition"
+            disabled={isPasswordWeak}
+            className={`w-full rounded-full bg-gradient-to-r from-lime-300 to-lime-500 text-indigo-900 font-semibold py-3 shadow-lg transition ${
+              isPasswordWeak ? "opacity-60 cursor-not-allowed" : "hover:opacity-95"
+            }`}
           >
             Reset Password
           </button>
