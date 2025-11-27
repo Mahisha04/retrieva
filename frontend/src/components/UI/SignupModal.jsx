@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PasswordStrengthMeter from "./PasswordStrengthMeter";
 
 export default function SignupModal({ onClose, onSignup }) {
   const [firstName, setFirstName] = useState("");
@@ -112,6 +113,9 @@ export default function SignupModal({ onClose, onSignup }) {
               placeholder="Password"
               className={inputClass}
             />
+            <div className="sm:col-span-2">
+              <PasswordStrengthMeter password={password} />
+            </div>
             <input
               type="password"
               required

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import PasswordStrengthMeter from "./PasswordStrengthMeter";
 
 export default function ForgotPasswordModal({ initialEmail = "", onClose, onResetComplete }) {
   const [email, setEmail] = useState(initialEmail);
@@ -136,6 +137,7 @@ export default function ForgotPasswordModal({ initialEmail = "", onClose, onRese
             placeholder="New Password"
             className={inputClass}
           />
+          <PasswordStrengthMeter password={newPassword} />
 
           <input
             type="password"
