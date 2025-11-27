@@ -9,6 +9,8 @@ const LEVELS = [
   { label: "Very Strong", barClass: "bg-emerald-500", textClass: "text-emerald-300" }
 ];
 
+const MIN_ACCEPTABLE_SCORE = 2;
+
 export default function PasswordStrengthMeter({ password = "", onFeedback }) {
   const analysis = useMemo(() => {
     if (!password) return null;
@@ -18,6 +20,7 @@ export default function PasswordStrengthMeter({ password = "", onFeedback }) {
   const score = analysis ? Math.min(Math.max(analysis.score, 0), 4) : 0;
   const level = LEVELS[score];
   const progressPercent = password ? ((score + 1) / LEVELS.length) * 100 : 0;
+  const isWeak = Boolean(password) && score < MIN_ACCEPTABLE_SCORE;
 
   const suggestions = useMemo(() => {
     if (!password) return [];
@@ -56,6 +59,9 @@ export default function PasswordStrengthMeter({ password = "", onFeedback }) {
           style={{ width: `${progressPercent}%` }}
         />
       </div>
+      {isWeak && (
+        <p className="text-red-200">Password is weak. Add more words, numbers, or symbols to strengthen it.</p>
+      )}
       {password && suggestions.length > 0 && (
         <ul className="list-disc list-inside text-gray-200 space-y-1">
           {suggestions.map((tip, index) => (
