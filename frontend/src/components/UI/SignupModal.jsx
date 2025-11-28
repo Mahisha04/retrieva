@@ -46,31 +46,18 @@ export default function SignupModal({ onClose, onSignup }) {
     }
 
     if (passwordScore < MIN_PASSWORD_SCORE) {
-      setError("Weak password detected. Please choose a stronger password before continuing.");
+      setError("Weak password detected. Please choose a stronger password.");
       return;
     }
-
-    const name = `${firstName} ${lastName}`.trim();
 
     try {
       setIsSubmitting(true);
 
-      const raw = localStorage.getItem("accounts");
-      const accounts = raw ? JSON.parse(raw) : [];
-      const exists = accounts.find(
-        (a) => a.email && a.email.toLowerCase() === email.toLowerCase()
-      );
-      if (exists) {
-        setError("An account with this email already exists. Please login.");
-        return;
-      }
-
-      const { error: supabaseError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name,
             firstName,
             lastName,
             phone
@@ -78,21 +65,44 @@ export default function SignupModal({ onClose, onSignup }) {
         }
       });
 
-      if (supabaseError) {
-        console.error("Supabase signup failed", supabaseError);
-        setError(supabaseError.message || "Unable to create account right now. Please try again.");
+      if (signUpError) {
+        console.error("Supabase signup failed", signUpError);
+        setError(signUpError.message || "Unable to create account right now. Please try again.");
         return;
       }
 
-      const acct = { name, firstName, lastName, email, phone, password };
-      accounts.push(acct);
-      localStorage.setItem("accounts", JSON.stringify(accounts));
+      const user = data?.user;
+      if (!user) {
+        setError("Signup succeeded but no user record was returned.");
+        return;
+      }
 
-      if (onSignup) onSignup({ name, email, phone });
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: user.id,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        email
+      });
+
+      if (profileError) {
+        console.error("Failed to insert profile", profileError);
+        setError(profileError.message || "Unable to save profile details.");
+        return;
+      }
+
+      if (onSignup) {
+        onSignup({
+          id: user.id,
+          email: user.email,
+          name: `${firstName} ${lastName}`.trim(),
+          phone
+        });
+      }
       onClose();
     } catch (err) {
-      console.error("Signup failed:", err);
-      setError("Signup failed. See console for details.");
+      console.error("Unexpected signup error:", err);
+      setError("Unexpected error during signup.");
     } finally {
       setIsSubmitting(false);
     }
