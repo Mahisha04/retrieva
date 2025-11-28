@@ -249,24 +249,23 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [user]);
 
   const loadMyFoundItems = useCallback(async () => {
-    const contact = (user?.email || '').toLowerCase();
-    const phoneDigits = (user?.phone || '').toString().replace(/\D+/g, '');
-    const finderId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
-    if (!contact && !phoneDigits && !finderId) {
+    const finderId = user?.id;
+    if (!finderId) {
       setMyFoundItems([]);
       return;
     }
     setLoadingMyFoundItems(true);
     try {
-      const params = new URLSearchParams();
-      if (contact) params.append('finderContact', contact);
-      if (phoneDigits) params.append('finderPhone', phoneDigits);
-      if (finderId) params.append('finderId', finderId);
-      params.append('includeClaims', 'true');
-      const suffix = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(API.url(`/found-items${suffix}`));
-      const data = await res.json();
-      setMyFoundItems(Array.isArray(data) ? data : []);
+      // Fetch found items for this finder, including related claims
+      const { data: foundItems, error } = await supabase
+        .from('found_items')
+        .select('*, found_item_claims(*)')
+        .eq('finder_id', finderId);
+      if (error || !Array.isArray(foundItems)) {
+        setMyFoundItems([]);
+      } else {
+        setMyFoundItems(foundItems);
+      }
     } catch (e) {
       setMyFoundItems([]);
     } finally {
