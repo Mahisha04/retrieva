@@ -1,7 +1,34 @@
 
+
 import React from "react";
+import supabase from "../supabaseClient";
 
 export default function FoundMyClaims({ claims = [], loading = false, isFinder = false, user }) {
+  const handleApprove = async (claimId, foundItemId) => {
+    if (!claimId || !foundItemId) {
+      alert("missing_params");
+      return;
+    }
+    await supabase.from("found_item_claims")
+      .update({ status: "approved" })
+      .eq("id", claimId);
+    await supabase.from("found_items")
+      .update({ status: "claimed" })
+      .eq("id", foundItemId);
+    window.location.reload();
+  };
+
+  const handleReject = async (claimId, foundItemId) => {
+    if (!claimId || !foundItemId) {
+      alert("missing_params");
+      return;
+    }
+    await supabase.from("found_item_claims")
+      .update({ status: "rejected" })
+      .eq("id", claimId);
+    window.location.reload();
+  };
+
   if (loading) {
     return <div className="text-gray-500">Loading your claims…</div>;
   }
@@ -37,7 +64,20 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
           )}
           <div className="mt-4 flex gap-3">
             {claim.status === 'pending' && isFinder && (
-              <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded">Waiting for your decision</span>
+              <>
+                <button
+                  className="px-4 py-2 bg-green-600 text-white rounded"
+                  onClick={() => handleApprove(claim.id, claim.found_item_id)}
+                >
+                  Approve
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded"
+                  onClick={() => handleReject(claim.id, claim.found_item_id)}
+                >
+                  Reject
+                </button>
+              </>
             )}
             {claim.status === 'approved' && (
               <span className="px-4 py-2 bg-green-100 text-green-800 rounded">Approved</span>
