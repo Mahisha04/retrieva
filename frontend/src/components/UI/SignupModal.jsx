@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
 import { generatePasswordIdeas } from "../../utils/passwordIdeas";
+import supabase from "../../supabaseClient";
 
 const MIN_PASSWORD_SCORE = 2; // require at least "Medium"
 
@@ -14,6 +15,7 @@ export default function SignupModal({ onClose, onSignup }) {
   const [error, setError] = useState("");
   const [passwordScore, setPasswordScore] = useState(0);
   const [recommendedPasswords, setRecommendedPasswords] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleStrengthFeedback = useCallback(({ score = 0 } = {}) => {
     setPasswordScore(score);
@@ -29,7 +31,7 @@ export default function SignupModal({ onClose, onSignup }) {
 
   const isPasswordWeak = Boolean(password) && passwordScore < MIN_PASSWORD_SCORE;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -51,6 +53,8 @@ export default function SignupModal({ onClose, onSignup }) {
     const name = `${firstName} ${lastName}`.trim();
 
     try {
+      setIsSubmitting(true);
+
       const raw = localStorage.getItem("accounts");
       const accounts = raw ? JSON.parse(raw) : [];
       const exists = accounts.find(
@@ -60,6 +64,26 @@ export default function SignupModal({ onClose, onSignup }) {
         setError("An account with this email already exists. Please login.");
         return;
       }
+
+      const { error: supabaseError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            firstName,
+            lastName,
+            phone
+          }
+        }
+      });
+
+      if (supabaseError) {
+        console.error("Supabase signup failed", supabaseError);
+        setError(supabaseError.message || "Unable to create account right now. Please try again.");
+        return;
+      }
+
       const acct = { name, firstName, lastName, email, phone, password };
       accounts.push(acct);
       localStorage.setItem("accounts", JSON.stringify(accounts));
@@ -69,6 +93,8 @@ export default function SignupModal({ onClose, onSignup }) {
     } catch (err) {
       console.error("Signup failed:", err);
       setError("Signup failed. See console for details.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -174,12 +200,12 @@ export default function SignupModal({ onClose, onSignup }) {
 
           <button
             type="submit"
-            disabled={isPasswordWeak}
+            disabled={isPasswordWeak || isSubmitting}
             className={`w-full rounded-full bg-gradient-to-r from-lime-300 to-lime-500 text-indigo-900 font-semibold py-3 mt-2 shadow-lg transition ${
-              isPasswordWeak ? "opacity-60 cursor-not-allowed" : "hover:opacity-95"
+              isPasswordWeak || isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:opacity-95"
             }`}
           >
-            Submit
+            {isSubmitting ? "Creating account..." : "Submit"}
           </button>
 
           <p className="text-center text-sm text-gray-200 mt-4">
