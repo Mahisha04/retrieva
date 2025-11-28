@@ -19,6 +19,11 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
     }
     // Use user.id if available, fallback to user.email
     const claimantId = user?.id ? user.id : (user?.email || "").toString().trim().toLowerCase();
+    // Prevent finder from claiming their own item
+    if (item.finder_id === user.id) {
+      alert("You cannot claim your own item.");
+      return;
+    }
     setSubmitting(true);
     try {
       // Upload photo to Supabase Storage

@@ -2,11 +2,13 @@ import React from "react";
 
 export default function FoundMyClaims({ claims = [], loading = false }) {
   if (loading) return <div className="text-gray-500">Loading your claims…</div>;
-  if (!claims || claims.length === 0) return <div className="text-gray-500">You have not claimed any found items yet.</div>;
+  // Only show claims with valid found_item_id
+  const validClaims = Array.isArray(claims) ? claims.filter(c => c.found_item_id) : [];
+  if (validClaims.length === 0) return <div className="text-gray-500">You have not claimed any found items yet.</div>;
 
   return (
     <div className="space-y-4">
-      {claims.map((claim) => {
+      {validClaims.map((claim) => {
         const status = claim.status || 'pending';
         const finderPhone = claim.found_item?.finder_phone || claim.found_item?.finder_contact || null;
         const finderContact = claim.found_item?.finder_contact || null;

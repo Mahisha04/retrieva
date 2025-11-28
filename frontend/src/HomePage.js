@@ -256,7 +256,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
     setLoadingMyFoundItems(true);
     try {
-      // Fetch found items for this finder, including related claims
+      // Finder dashboard: fetch only items uploaded by user, with claims for each item
       const { data: foundItems, error } = await supabase
         .from('found_items')
         .select('*, found_item_claims(*)')
@@ -264,7 +264,14 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       if (error || !Array.isArray(foundItems)) {
         setMyFoundItems([]);
       } else {
-        setMyFoundItems(foundItems);
+        // For each item, filter out claims with null found_item_id
+        const cleaned = foundItems.map(item => ({
+          ...item,
+          found_item_claims: Array.isArray(item.found_item_claims)
+            ? item.found_item_claims.filter(claim => claim.found_item_id)
+            : []
+        }));
+        setMyFoundItems(cleaned);
       }
     } catch (e) {
       setMyFoundItems([]);
@@ -277,32 +284,22 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     // Two-step Supabase query for finder claims
     setLoadingMyFoundClaims(true);
     try {
-      const finderId = user?.id;
-      if (!finderId) {
+      const claimantId = user?.id;
+      if (!claimantId) {
         setMyFoundClaims([]);
         setLoadingMyFoundClaims(false);
         return;
       }
-      // Step 1: Fetch found items for this finder
-      const { data: foundItems, error: foundItemsError } = await supabase
-        .from('found_items')
-        .select('id')
-        .eq('finder_id', finderId);
-      if (foundItemsError || !Array.isArray(foundItems) || foundItems.length === 0) {
-        setMyFoundClaims([]);
-        setLoadingMyFoundClaims(false);
-        return;
-      }
-      const itemIds = foundItems.map(item => item.id);
-      // Step 2: Fetch claims for those item IDs
-      const { data: claims, error: claimsError } = await supabase
+      // Lost person dashboard: fetch only claims submitted by user
+      const { data: claims, error } = await supabase
         .from('found_item_claims')
-        .select('*')
-        .in('found_item_id', itemIds);
-      if (claimsError || !Array.isArray(claims)) {
+        .select('*, found_items(*)')
+        .eq('claimant_id', claimantId);
+      if (error || !Array.isArray(claims)) {
         setMyFoundClaims([]);
       } else {
-        setMyFoundClaims(claims);
+        // Ignore claims with null found_item_id
+        setMyFoundClaims(claims.filter(claim => claim.found_item_id));
       }
     } catch (e) {
       setMyFoundClaims([]);
