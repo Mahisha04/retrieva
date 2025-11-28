@@ -14,6 +14,7 @@ import FoundMyClaims from "./components/FoundMyClaims";
 import FoundItemEditModal from "./components/FoundItemEditModal";
 import React from 'react';
 import {API}from "./config";
+import supabase from "./supabaseClient";
 // import supabase from "./supabaseClient";
 import fallbackItems from "./data/items.json";
 
