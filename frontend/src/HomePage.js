@@ -281,24 +281,36 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [user]);
 
   const loadMyFoundClaims = useCallback(async () => {
-    // Finder dashboard: fetch claims for items uploaded by the finder
     setLoadingMyFoundClaims(true);
     try {
-      const finderId = user?.id;
-      if (!finderId) {
+      const userId = user?.id;
+      if (!userId) {
         setMyFoundClaims([]);
         setLoadingMyFoundClaims(false);
         return;
       }
-      // Fetch claims for items where found_items.finder_id = user.id
-      const { data: claims, error } = await supabase
-        .from('found_item_claims')
-        .select('*, found_items(*)')
-        .eq('found_items.finder_id', finderId);
+      let claims = [];
+      let error = null;
+      if (tab === 'found-my-claims' && user?.role === 'finder') {
+        // Finder: claims for items they posted
+        const result = await supabase
+          .from('found_item_claims')
+          .select('*, found_items(*)')
+          .eq('found_items.finder_id', userId);
+        claims = result.data;
+        error = result.error;
+      } else {
+        // Lost user: claims they submitted
+        const result = await supabase
+          .from('found_item_claims')
+          .select('*, found_items(*)')
+          .eq('claimant_id', userId);
+        claims = result.data;
+        error = result.error;
+      }
       if (error || !Array.isArray(claims)) {
         setMyFoundClaims([]);
       } else {
-        // Ignore claims with null found_item_id
         setMyFoundClaims(claims.filter(claim => claim.found_item_id));
       }
     } catch (e) {
@@ -306,7 +318,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     } finally {
       setLoadingMyFoundClaims(false);
     }
-  }, [user]);
+  }, [user, tab]);
 
   const loadAllFoundClaims = useCallback(async () => {
     setLoadingFoundClaims(true);
