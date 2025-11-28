@@ -285,18 +285,18 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       let claims = [];
       let error = null;
       if (tab === 'found-my-claims' && user?.role === 'finder') {
-        // Finder: claims submitted by lost users on items uploaded by finder
+        // Finder: claims THEY made on other people's items
         const result = await supabase
           .from('found_item_claims')
           .select('*, found_items(*)')
-          .eq('found_items.finder_id', userId);
+          .eq('claimant_id', userId);
         claims = result.data;
         error = result.error;
       } else {
         // Lost user: claims they submitted
         const result = await supabase
           .from('found_item_claims')
-          .select('*')
+          .select('*, found_items(*)')
           .eq('claimant_id', userId);
         claims = result.data;
         error = result.error;

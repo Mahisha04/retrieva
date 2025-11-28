@@ -39,8 +39,8 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
       const proofPhotoUrl = urlData?.publicUrl || '';
 
       const { error } = await supabase.from("found_item_claims").insert({
-        found_item_id: item.id, // IMPORTANT
-        claimant_id: claimantId, // user.id or user.email
+        found_item_id: item.id,
+        claimant_id: user.id,
         claimant_name: name,
         claimant_contact: contact,
         proof_photo_url: proofPhotoUrl,
