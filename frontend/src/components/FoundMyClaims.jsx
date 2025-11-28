@@ -15,8 +15,8 @@ export default function FoundMyClaims({ claims = [], loading = false }) {
             <div className="flex flex-col md:flex-row md:justify-between gap-3">
               <div>
                 <div className="text-xs uppercase text-gray-500">Item</div>
-                <div className="text-lg font-semibold">{claim.found_item?.item_name || `Item #${claim.found_item_id}`}</div>
-                <div className="text-sm text-gray-600">{claim.found_item?.description}</div>
+                <div className="text-lg font-semibold">{claim.found_item?.item_name || (claim.found_item_id ? `Item #${claim.found_item_id}` : "Unknown Item")}</div>
+                <div className="text-sm text-gray-600">{claim.found_item?.description || "No description available."}</div>
               </div>
               <div className="text-sm text-gray-600">
                 <div>Status: {status}</div>

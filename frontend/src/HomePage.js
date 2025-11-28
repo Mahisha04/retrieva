@@ -14,6 +14,7 @@ import FoundMyClaims from "./components/FoundMyClaims";
 import FoundItemEditModal from "./components/FoundItemEditModal";
 import React from 'react';
 import {API}from "./config";
+import supabase from "./supabaseClient";
 import fallbackItems from "./data/items.json";
 
 export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActiveTab, isAdmin = false }) {
@@ -273,22 +274,17 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [user]);
 
   const loadMyFoundClaims = useCallback(async () => {
-    const contact = (user?.email || '').toLowerCase();
-    const claimantId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
-    if (!contact) {
-      if (!claimantId) {
-        setMyFoundClaims([]);
-        return;
-      }
+    if (!user?.id) {
+      setMyFoundClaims([]);
+      return;
     }
     setLoadingMyFoundClaims(true);
     try {
-      const params = new URLSearchParams();
-      if (contact) params.append('claimantContact', contact);
-      if (claimantId) params.append('claimantId', claimantId);
-      const suffix = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(API.url(`/found-item-claims${suffix}`));
-      const data = await res.json();
+      const { data, error } = await supabase
+        .from("found_item_claims")
+        .select(`*, found_items (id, item_name, description, finder_id)`) 
+        .eq("claimant_id", user.id);
+      if (error) throw error;
       setMyFoundClaims(Array.isArray(data) ? data : []);
     } catch (e) {
       setMyFoundClaims([]);
@@ -300,15 +296,22 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   const loadAllFoundClaims = useCallback(async () => {
     setLoadingFoundClaims(true);
     try {
-      const res = await fetch(API.url('/found-item-claims?admin=true'));
-      const data = await res.json();
+      if (!user?.id) {
+        setFoundClaims([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("found_item_claims")
+        .select(`*, found_items (id, item_name, description, finder_id)`) 
+        .eq("found_items.finder_id", user.id);
+      if (error) throw error;
       setFoundClaims(Array.isArray(data) ? data : []);
     } catch (e) {
       setFoundClaims([]);
     } finally {
       setLoadingFoundClaims(false);
     }
-  }, []);
+  }, [user]);
 
   const handleFoundClaimDecision = useCallback(async (claimId, action) => {
     if (!claimId || !action) return;
