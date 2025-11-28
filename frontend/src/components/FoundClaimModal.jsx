@@ -25,11 +25,11 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
       const fileExt = proofPhoto.name.split('.').pop();
       const fileName = `${item.id}-${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('found-proofs')
+        .from('item-images')
         .upload(fileName, proofPhoto, { upsert: true });
       if (uploadError) throw new Error(uploadError.message || 'Failed to upload proof photo');
       const { data: urlData } = supabase.storage
-        .from('found-proofs')
+        .from('item-images')
         .getPublicUrl(fileName);
       const proofPhotoUrl = urlData?.publicUrl || '';
 
