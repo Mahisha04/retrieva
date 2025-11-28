@@ -256,10 +256,10 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
     setLoadingMyFoundItems(true);
     try {
-      // Finder dashboard: fetch only items uploaded by user
+      // Finder dashboard: fetch only items uploaded by user, including claims
       const { data: foundItems, error } = await supabase
         .from('found_items')
-        .select('*')
+        .select('*, found_item_claims(*)')
         .eq('finder_id', finderId);
       if (error || !Array.isArray(foundItems)) {
         setMyFoundItems([]);
