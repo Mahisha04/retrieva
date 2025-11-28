@@ -1,6 +1,6 @@
 import React from "react";
-
-export default function FoundMyClaims({ claims = [], loading = false }) {
+// Add isFinder and user props
+export default function FoundMyClaims({ claims = [], loading = false, isFinder = false, user }) {
   if (loading) return <div className="text-gray-500">Loading your claims…</div>;
   // Only show claims with valid found_item_id
   const validClaims = Array.isArray(claims) ? claims.filter(c => c.found_item_id) : [];
