@@ -256,22 +256,15 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     }
     setLoadingMyFoundItems(true);
     try {
-      // Finder dashboard: fetch only items uploaded by user, with claims for each item
+      // Finder dashboard: fetch only items uploaded by user
       const { data: foundItems, error } = await supabase
         .from('found_items')
-        .select('*, found_item_claims(*)')
+        .select('*')
         .eq('finder_id', finderId);
       if (error || !Array.isArray(foundItems)) {
         setMyFoundItems([]);
       } else {
-        // For each item, filter out claims with null found_item_id
-        const cleaned = foundItems.map(item => ({
-          ...item,
-          found_item_claims: Array.isArray(item.found_item_claims)
-            ? item.found_item_claims.filter(claim => claim.found_item_id)
-            : []
-        }));
-        setMyFoundItems(cleaned);
+        setMyFoundItems(foundItems);
       }
     } catch (e) {
       setMyFoundItems([]);
@@ -292,7 +285,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       let claims = [];
       let error = null;
       if (tab === 'found-my-claims' && user?.role === 'finder') {
-        // Finder: claims for items they posted
+        // Finder: claims submitted by lost users on items uploaded by finder
         const result = await supabase
           .from('found_item_claims')
           .select('*, found_items(*)')
@@ -303,7 +296,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
         // Lost user: claims they submitted
         const result = await supabase
           .from('found_item_claims')
-          .select('*, found_items(*)')
+          .select('*')
           .eq('claimant_id', userId);
         claims = result.data;
         error = result.error;
