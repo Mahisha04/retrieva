@@ -278,7 +278,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
     // Two-step Supabase query for finder claims
     setLoadingMyFoundClaims(true);
     try {
-      const finderId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
+      const finderId = user?.id;
       if (!finderId) {
         setMyFoundClaims([]);
         setLoadingMyFoundClaims(false);
