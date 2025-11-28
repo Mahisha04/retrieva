@@ -728,6 +728,16 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                                     </button>
                                   </>
                                 )}
+                                {claim.status === 'approved' && (
+                                  <div className="mt-2 p-3 border border-green-200 rounded bg-green-50 text-gray-900">
+                                    <div className="text-xs uppercase text-gray-500">Contact Details</div>
+                                    <div className="text-sm">Finder: {item.finder_contact || item.finder_phone || 'N/A'}</div>
+                                    <div className="text-sm">Claimant: {claim.claimant_contact || claim.claimant_name || 'N/A'}</div>
+                                  </div>
+                                )}
+                                {claim.status === 'rejected' && (
+                                  <div className="mt-2 text-sm text-red-600 font-medium">Rejected</div>
+                                )}
                               </div>
                             </div>
                           ))
