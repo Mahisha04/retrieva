@@ -17,7 +17,8 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
       setError("Please upload a proof photo.");
       return;
     }
-    const claimantId = (user?.id || user?.email || user?.phone || "").toString().trim().toLowerCase();
+    // Use user.id if available, fallback to user.email
+    const claimantId = user?.id ? user.id : (user?.email || "").toString().trim().toLowerCase();
     setSubmitting(true);
     try {
       // Upload photo to Supabase Storage
@@ -33,8 +34,8 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
       const proofPhotoUrl = urlData?.publicUrl || '';
 
       const { error } = await supabase.from("found_item_claims").insert({
-        found_item_id: item.id,
-        claimant_id: claimantId,
+        found_item_id: item.id, // IMPORTANT
+        claimant_id: claimantId, // user.id or user.email
         claimant_name: name,
         claimant_contact: contact,
         proof_photo_url: proofPhotoUrl,
