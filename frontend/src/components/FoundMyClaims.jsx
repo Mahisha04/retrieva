@@ -46,7 +46,7 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
         // found_item_id may be at root or nested under found_item
         const foundItemId = claim.found_item_id || claim.found_item?.id || claim.found_item?.found_item_id;
         // Debug log for troubleshooting
-        // console.log('Approve/Reject params:', { claimId, foundItemId, claim });
+        console.log('Approve/Reject params:', { claimId, foundItemId, claim });
         return (
           <div key={claimId} className="border rounded-xl bg-white p-4 shadow-sm">
             <div className="flex flex-col md:flex-row md:justify-between gap-3">
