@@ -281,20 +281,20 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [user]);
 
   const loadMyFoundClaims = useCallback(async () => {
-    // Two-step Supabase query for finder claims
+    // Finder dashboard: fetch claims for items uploaded by the finder
     setLoadingMyFoundClaims(true);
     try {
-      const claimantId = user?.id;
-      if (!claimantId) {
+      const finderId = user?.id;
+      if (!finderId) {
         setMyFoundClaims([]);
         setLoadingMyFoundClaims(false);
         return;
       }
-      // Lost person dashboard: fetch only claims submitted by user
+      // Fetch claims for items where found_items.finder_id = user.id
       const { data: claims, error } = await supabase
         .from('found_item_claims')
         .select('*, found_items(*)')
-        .eq('claimant_id', claimantId);
+        .eq('found_items.finder_id', finderId);
       if (error || !Array.isArray(claims)) {
         setMyFoundClaims([]);
       } else {
