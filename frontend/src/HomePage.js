@@ -686,6 +686,16 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                   deletingId={deletingFoundItemId}
                   user={user}
                 />
+                {/* Show claims for found items with approve/reject buttons */}
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-3">Approve/Reject Claims for My Found Items</h3>
+                  <FoundClaimsAdmin
+                    claims={myFoundClaims}
+                    loading={loadingMyFoundClaims}
+                    onDecision={handleFinderClaimDecision}
+                    onRefresh={loadMyFoundClaims}
+                  />
+                </div>
               </div>
             )}
 
