@@ -351,7 +351,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       const res = await fetch(API.url(`/found-item-claims/${claimId}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ claimId, action }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
