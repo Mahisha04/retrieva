@@ -274,23 +274,36 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
   }, [user]);
 
   const loadMyFoundClaims = useCallback(async () => {
-    const contact = (user?.email || '').toLowerCase();
-    const claimantId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
-    if (!contact) {
-      if (!claimantId) {
-        setMyFoundClaims([]);
-        return;
-      }
-    }
+    // Two-step Supabase query for finder claims
     setLoadingMyFoundClaims(true);
     try {
-      const params = new URLSearchParams();
-      if (contact) params.append('claimantContact', contact);
-      if (claimantId) params.append('claimantId', claimantId);
-      const suffix = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(API.url(`/found-item-claims${suffix}`));
-      const data = await res.json();
-      setMyFoundClaims(Array.isArray(data) ? data : []);
+      const finderId = (user?.id || user?.email || user?.phone || '').toString().trim().toLowerCase();
+      if (!finderId) {
+        setMyFoundClaims([]);
+        setLoadingMyFoundClaims(false);
+        return;
+      }
+      // Step 1: Fetch found items for this finder
+      const { data: foundItems, error: foundItemsError } = await supabase
+        .from('found_items')
+        .select('id')
+        .eq('finder_id', finderId);
+      if (foundItemsError || !Array.isArray(foundItems) || foundItems.length === 0) {
+        setMyFoundClaims([]);
+        setLoadingMyFoundClaims(false);
+        return;
+      }
+      const itemIds = foundItems.map(item => item.id);
+      // Step 2: Fetch claims for those item IDs
+      const { data: claims, error: claimsError } = await supabase
+        .from('found_item_claims')
+        .select('*')
+        .in('found_item_id', itemIds);
+      if (claimsError || !Array.isArray(claims)) {
+        setMyFoundClaims([]);
+      } else {
+        setMyFoundClaims(claims);
+      }
     } catch (e) {
       setMyFoundClaims([]);
     } finally {
