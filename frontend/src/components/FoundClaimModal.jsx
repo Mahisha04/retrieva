@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { API } from "../config";
+import supabase from "../supabaseClient";
 
 export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
   const [contact, setContact] = useState(user?.email || "");
@@ -20,23 +20,30 @@ export default function FoundClaimModal({ item, onClose, onSubmitted, user }) {
     const claimantId = (user?.id || user?.email || user?.phone || "").toString().trim().toLowerCase();
     setSubmitting(true);
     try {
-      const fd = new FormData();
-      fd.append("foundItemId", item.id);
-      fd.append("claimantContact", contact);
-      fd.append("claimantName", name);
-      if (claimantId) {
-        fd.append("claimantId", claimantId);
-      }
-      fd.append("proofPhoto", proofPhoto);
-      const res = await fetch(API.url('/found-item-claims'), {
-        method: 'POST',
-        body: fd,
+      // Upload photo to Supabase Storage
+      const fileExt = proofPhoto.name.split('.').pop();
+      const fileName = `${item.id}-${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('found-proofs')
+        .upload(fileName, proofPhoto, { upsert: true });
+      if (uploadError) throw new Error(uploadError.message || 'Failed to upload proof photo');
+      const { data: urlData } = supabase.storage
+        .from('found-proofs')
+        .getPublicUrl(fileName);
+      const proofPhotoUrl = urlData?.publicUrl || '';
+
+      const { error } = await supabase.from("found_item_claims").insert({
+        found_item_id: item.id,
+        claimant_id: claimantId,
+        claimant_name: name,
+        claimant_contact: contact,
+        proof_photo_url: proofPhotoUrl,
+        status: "pending"
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Failed to submit claim');
-      if (onSubmitted) onSubmitted(data.claim);
+      if (error) throw new Error(error.message || "Failed to submit claim");
+      if (onSubmitted) onSubmitted();
     } catch (err) {
-      setError(err.message || 'Submission failed');
+      setError(err.message || "Submission failed");
     } finally {
       setSubmitting(false);
     }
