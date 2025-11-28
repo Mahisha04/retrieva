@@ -676,26 +676,67 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                     Refresh
                   </button>
                 </div>
-                <FinderFoundItemsBoard
-                  items={myFoundItems}
-                  loading={loadingMyFoundItems}
-                  onDecision={handleFinderClaimDecision}
-                  updatingClaimId={finderDecisionClaimId}
-                  onEdit={handleStartEditFoundItem}
-                  onDelete={handleDeleteFoundItem}
-                  deletingId={deletingFoundItemId}
-                  user={user}
-                />
-                {/* Show claims for found items with approve/reject buttons */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-3">Approve/Reject Claims for My Found Items</h3>
-                  <FoundClaimsAdmin
-                    claims={myFoundClaims}
-                    loading={loadingMyFoundClaims}
-                    onDecision={handleFinderClaimDecision}
-                    onRefresh={loadMyFoundClaims}
-                  />
-                </div>
+                {myFoundItems.length === 0 ? (
+                  <div className="text-gray-500">You have not reported any found items yet.</div>
+                ) : (
+                  myFoundItems.map(item => (
+                    <div key={item.id} className="mb-8 border rounded-xl bg-white p-4 shadow-sm">
+                      <div className="flex gap-4 items-center">
+                        <div>
+                          <div className="text-xs uppercase text-gray-500">ITEM</div>
+                          <div className="text-lg font-bold">{item.item_name}</div>
+                          <div className="text-sm text-gray-600">{item.description}</div>
+                          <div className="text-xs text-gray-500 mt-1">Location: {item.location_found || 'Unknown'}</div>
+                          <div className="text-xs text-gray-500">Status: {item.status}</div>
+                        </div>
+                        {item.image_url && (
+                          <img src={item.image_url} alt={item.item_name} className="w-32 h-32 object-cover rounded" />
+                        )}
+                      </div>
+                      <div className="mt-4">
+                        {Array.isArray(item.found_item_claims) && item.found_item_claims.length > 0 ? (
+                          item.found_item_claims.map(claim => (
+                            <div key={claim.id} className="border rounded bg-gray-50 p-3 mb-3">
+                              <div className="flex gap-4 items-center">
+                                <div className="flex-1">
+                                  <div className="font-semibold">Claimant: {claim.claimant_name || 'Unknown'}</div>
+                                  <div className="text-sm">Contact: {claim.claimant_contact}</div>
+                                  <div className="text-xs text-gray-500">Status: {claim.status}</div>
+                                  <div className="text-xs text-gray-500">Submitted: {claim.created_at ? new Date(claim.created_at).toLocaleString() : 'Unknown'}</div>
+                                </div>
+                                {claim.proof_photo_url && (
+                                  <img src={claim.proof_photo_url} alt="Proof" className="w-24 h-24 object-cover rounded" />
+                                )}
+                              </div>
+                              <div className="mt-2 flex gap-2">
+                                {claim.status === 'pending' && (
+                                  <>
+                                    <button
+                                      className="px-4 py-2 bg-green-600 text-white rounded"
+                                      onClick={() => handleFinderClaimDecision(claim.id, 'approve')}
+                                      disabled={finderDecisionClaimId === claim.id}
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="px-4 py-2 bg-red-600 text-white rounded"
+                                      onClick={() => handleFinderClaimDecision(claim.id, 'reject')}
+                                      disabled={finderDecisionClaimId === claim.id}
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-gray-500">No claims yet</div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
 
