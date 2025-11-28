@@ -4,7 +4,15 @@ export default function FoundMyClaims({ claims = [], loading = false }) {
   if (loading) return <div className="text-gray-500">Loading your claims…</div>;
   // Only show claims with valid found_item_id
   const validClaims = Array.isArray(claims) ? claims.filter(c => c.found_item_id) : [];
-  if (validClaims.length === 0) return <div className="text-gray-500">You have not claimed any found items yet.</div>;
+  if (validClaims.length === 0) {
+    return (
+      <div className="text-gray-500">
+        {isFinder
+          ? "No one has claimed your found items yet."
+          : "You have not claimed any found items yet."}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

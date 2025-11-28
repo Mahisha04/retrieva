@@ -285,11 +285,11 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       let claims = [];
       let error = null;
       if (tab === 'found-my-claims' && user?.role === 'finder') {
-        // Finder: claims THEY made on other people's items
+        // Finder: incoming claims on items they posted
         const result = await supabase
           .from('found_item_claims')
-          .select('*, found_items(*)')
-          .eq('claimant_id', userId);
+          .select('*, found_item:found_items(*)')
+          .eq('found_items.finder_id', userId);
         claims = result.data;
         error = result.error;
       } else {
@@ -749,7 +749,7 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                     Refresh
                   </button>
                 </div>
-                <FoundMyClaims claims={myFoundClaims} loading={loadingMyFoundClaims} />
+                <FoundMyClaims claims={myFoundClaims} loading={loadingMyFoundClaims} isFinder={user?.role === 'finder'} user={user} />
               </div>
             )}
 
