@@ -204,7 +204,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
 
   // Split filtered results into Lost vs Found for the feed
   const lostItems = (filtered || []).filter((i) => (i.type || "").toLowerCase() === "lost");
-  const foundItems = (filtered || []).filter((i) => (i.type || "").toLowerCase() === "found");
   const returnedItems = (filtered || []).filter((i) => (i.type || "").toLowerCase() === "returned");
 
   const handleGetStarted = useCallback(() => {
@@ -450,7 +449,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
       return contactMatch || trackedMatch;
     });
     const lost = userItems.filter(i => (i.type || '').toLowerCase() === 'lost');
-    const found = userItems.filter(i => (i.type || '').toLowerCase() === 'found');
     const returnedOwned = userItems.filter(i => (i.type || '').toLowerCase() === 'returned');
 
     return (
@@ -482,25 +480,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
               </div>
             )}
 
-            {tab === 'found-board' && (
-              <div id="found-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">Found Items</h3>
-                    <p className="text-sm text-gray-600">Items reported as found and waiting for their owners to reach out.</p>
-                  </div>
-                </div>
-                {foundItems.length === 0 ? (
-                  <div className="text-gray-500">No found items yet.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {foundItems.map((i) => (
-                      <ItemCard key={i.id} item={i} user={user} ownedIdSet={ownedIdSet} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
             {tab === 'returned-items' && (
               <div id="returned-board-section" className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
