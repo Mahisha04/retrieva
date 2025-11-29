@@ -5,27 +5,40 @@ import supabase from "../supabaseClient";
 
 export default function FoundMyClaims({ claims = [], loading = false, isFinder = false, user }) {
   const handleApprove = async (claimId, foundItemId) => {
-    if (!claimId || !foundItemId) {
+    const finderId = user?.id;
+    if (!claimId || !foundItemId || !finderId) {
       alert("missing_params");
       return;
     }
-    await supabase.from("found_item_claims")
-      .update({ status: "approved" })
-      .eq("id", claimId);
-    await supabase.from("found_items")
-      .update({ status: "claimed" })
-      .eq("id", foundItemId);
+    const res = await fetch(`/found-item-claims/${claimId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claimId, status: 'approved', finderId }),
+    });
+    const result = await res.json();
+    if (!result.success) {
+      alert(result.error || 'Failed to approve');
+      return;
+    }
     window.location.reload();
   };
 
   const handleReject = async (claimId, foundItemId) => {
-    if (!claimId || !foundItemId) {
+    const finderId = user?.id;
+    if (!claimId || !foundItemId || !finderId) {
       alert("missing_params");
       return;
     }
-    await supabase.from("found_item_claims")
-      .update({ status: "rejected" })
-      .eq("id", claimId);
+    const res = await fetch(`/found-item-claims/${claimId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claimId, status: 'rejected', finderId }),
+    });
+    const result = await res.json();
+    if (!result.success) {
+      alert(result.error || 'Failed to reject');
+      return;
+    }
     window.location.reload();
   };
 
