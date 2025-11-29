@@ -54,8 +54,8 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
   return (
     <div className="space-y-4">
       {claims.map((claim) => {
-        // Use claim.id if claim.claim_id is undefined
-        const claimId = claim.claim_id || claim.id;
+        // Use claim.id, claim.claim_id, or claim.uuid
+        const claimId = claim.claim_id || claim.id || claim.uuid;
         const foundItemId = claim.found_item_id;
         console.log('DEBUG: claim_id:', claimId, 'found_item_id:', foundItemId, claim);
         return (
