@@ -11,6 +11,49 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
   const displayName = user ? (user.name ? user.name.split(' ')[0] : (user.email ? user.email.split('@')[0] : null)) : null;
 
   return (
+                  <button
+                    className={`px-3 py-2 rounded ${activeTab === 'found-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                    onClick={() => onSetTab && onSetTab('found-board')}
+                  >
+                    Found Items
+                  </button>
+
+                  <button
+                    className={`px-3 py-2 rounded ${activeTab === 'report-found' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                    onClick={() => onSetTab && onSetTab('report-found')}
+                  >
+                    Report Found
+                  </button>
+
+                  <button
+                    className={`px-3 py-2 rounded ${activeTab === 'found-unclaimed' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                    onClick={() => onSetTab && onSetTab('found-unclaimed')}
+                  >
+                    Unclaimed Found
+                  </button>
+
+                  <button
+                    className={`px-3 py-2 rounded ${activeTab === 'found-my-items' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                    onClick={() => onSetTab && onSetTab('found-my-items')}
+                  >
+                    My Found Items
+                  </button>
+
+                  <button
+                    className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                    onClick={() => onSetTab && onSetTab('found-my-claims')}
+                  >
+                    My Found Claims
+                  </button>
+
+                  {isAdmin && (
+                    <button
+                      className={`px-3 py-2 rounded ${activeTab === 'found-approvals' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`}
+                      onClick={() => onSetTab && onSetTab('found-approvals')}
+                    >
+                      Found Approvals
+                    </button>
+                  )}
     <div className="flex justify-between items-center px-10 py-5 bg-white shadow-sm">
       <div className="flex flex-col">
         <h1 className="text-2xl font-extrabold tracking-wide text-[#0b1a4a]">Retrieva</h1>

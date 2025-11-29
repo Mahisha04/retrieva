@@ -796,6 +796,59 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
           </div>
 
           {/* featured horizontal strip */}
+                  <div className="max-w-6xl mx-auto mt-6 px-6">
+                    <h3 className="text-lg font-semibold mb-3">Featured</h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4">
+                      {(items || []).slice(0, 6).map((it) => (
+                        <div key={it.id} className="w-64 flex-shrink-0">
+                          <ItemCard item={it} user={user} ownedIdSet={ownedIdSet} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="max-w-5xl mx-auto mt-6">
+                    {(() => {
+                      const featuredIds = new Set((items || []).slice(0, 6).map((i) => i.id));
+                      const main = filtered.filter((it) => !featuredIds.has(it.id));
+                      const mainLost = main.filter((i) => (i.type || "").toLowerCase() === "lost");
+                      const mainFound = main.filter((i) => (i.type || "").toLowerCase() === "found");
+
+                      if (mainLost.length === 0 && mainFound.length === 0) {
+                        return (
+                          <div className="col-span-full text-center text-gray-500 py-12">
+                            No results found. Try different search terms or filters.
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <>
+                          {mainLost.length > 0 && (
+                            <div>
+                              <h3 className="text-lg font-semibold mb-3">Lost items</h3>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                {mainLost.map((item) => (
+                                  <ItemCard key={item.id} item={item} user={user} ownedIdSet={ownedIdSet} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {mainFound.length > 0 && (
+                            <div className="mt-8">
+                              <h3 className="text-lg font-semibold mb-3">Found items</h3>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                {mainFound.map((item) => (
+                                  <ItemCard key={item.id} item={item} user={user} ownedIdSet={ownedIdSet} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
         </>
       ) : null}
 
