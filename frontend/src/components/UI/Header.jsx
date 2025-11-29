@@ -10,6 +10,11 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
   const [forgotPrefill, setForgotPrefill] = useState("");
   const displayName = user ? (user.name ? user.name.split(' ')[0] : (user.email ? user.email.split('@')[0] : null)) : null;
 
+  // Helper to update both local and parent tab state
+  const handleTabClick = (tabName) => {
+    if (onSetTab) onSetTab(tabName);
+  };
+
   return (
     <React.Fragment>
       <div className="flex justify-between items-center px-10 py-5 bg-white shadow-sm">
@@ -20,17 +25,19 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <button className={`px-3 py-2 rounded ${activeTab === 'lost-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('lost-board')}>Lost Items</button>
-              <button className={`px-3 py-2 rounded ${activeTab === 'found-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('found-board')}>Found Items</button>
-              <button className={`px-3 py-2 rounded ${activeTab === 'returned-items' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('returned-items')}>Returned Items</button>
-              <button className={`px-3 py-2 rounded ${activeTab === 'report-found' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('report-found')}>Report Found</button>
-              <button className={`px-3 py-2 rounded ${activeTab === 'found-unclaimed' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('found-unclaimed')}>Unclaimed Found</button>
-              <button className={`px-3 py-2 rounded ${activeTab === 'found-my-items' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('found-my-items')}>My Found Items</button>
-              <button className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('found-my-claims')}>My Found Claims</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'lost-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('lost-board')}>Lost Items</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'found-board' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('found-board')}>Found Items</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'returned-items' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('returned-items')}>Returned Items</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'listings' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('listings')}>My Listings</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'responses' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('responses')}>Responses</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'report-found' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('report-found')}>Report Found</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'found-unclaimed' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('found-unclaimed')}>Unclaimed Found</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'found-my-items' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('found-my-items')}>My Found Items</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'found-my-claims' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('found-my-claims')}>My Found Claims</button>
               {isAdmin && (
-                <button className={`px-3 py-2 rounded ${activeTab === 'found-approvals' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => onSetTab && onSetTab('found-approvals')}>Found Approvals</button>
+                <button className={`px-3 py-2 rounded ${activeTab === 'found-approvals' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => handleTabClick('found-approvals')}>Found Approvals</button>
               )}
-              <button className={`px-3 py-2 rounded ${activeTab === 'add' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => { if (onSetTab) onSetTab('add'); if (onOpenAdd) onOpenAdd(); }}>Add Item</button>
+              <button className={`px-3 py-2 rounded ${activeTab === 'add' ? 'bg-teal-600 text-white' : 'bg-white border text-gray-700 hover:bg-teal-600 hover:text-white'} transition`} onClick={() => { handleTabClick('add'); if (onOpenAdd) onOpenAdd(); }}>Add Item</button>
               <button className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg" type="button" onClick={onLogout}>Sign Out</button>
             </div>
           ) : (
