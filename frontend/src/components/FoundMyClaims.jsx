@@ -59,8 +59,9 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
         const foundItemId = claim.found_item_id;
         console.log('DEBUG: claim_id:', claimId, 'found_item_id:', foundItemId, claim);
         return (
-          <div key={claimId} className="border rounded-xl bg-white p-4 shadow-sm">
+          <div key={claimId || claim.found_item_id} className="border rounded-xl bg-white p-4 shadow-sm">
             <div className="text-xs text-red-600 mb-2">DEBUG: claim_id: {String(claimId)} | found_item_id: {String(foundItemId)}</div>
+            <pre className="text-xs text-gray-700 bg-gray-100 p-2 mb-2">{JSON.stringify(claim, null, 2)}</pre>
             <div className="flex flex-col md:flex-row md:justify-between gap-3">
               <div>
                 <div className="text-xs uppercase text-gray-500">Found Item</div>
