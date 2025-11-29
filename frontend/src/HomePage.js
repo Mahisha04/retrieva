@@ -522,19 +522,6 @@ export default function HomePage({ onOpenAdd, user, onLogout, activeTab, setActi
                       </div>
 
                       <div>
-                        <h4 className="text-lg font-semibold mb-3">Found items</h4>
-                        {found.length === 0 ? (
-                          <div className="text-gray-500 text-sm">No found items yet.</div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {found.map((i) => (
-                              <ItemCard key={i.id} item={i} user={user} ownedIdSet={ownedIdSet} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
                         <h4 className="text-lg font-semibold mb-3">Items Returned</h4>
                         {returnedOwned.length === 0 ? (
                           <div className="text-gray-500 text-sm">No items have been marked as returned yet.</div>
