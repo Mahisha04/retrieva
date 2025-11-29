@@ -4,41 +4,19 @@ import React from "react";
 import supabase from "../supabaseClient";
 
 export default function FoundMyClaims({ claims = [], loading = false, isFinder = false, user }) {
-  const handleApprove = async (claimId, foundItemId) => {
-    const finderId = user?.id;
-    if (!claimId || !foundItemId || !finderId) {
-      alert("missing_params");
-      return;
-    }
-    const res = await fetch(`/found-item-claims/${claimId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId, status: 'approved', finderId }),
-    });
-    const result = await res.json();
-    if (!result.success) {
-      alert(result.error || 'Failed to approve');
-      return;
-    }
+  const handleApprove = async (claimId) => {
+    if (!claimId) return alert("missing claimId");
+    await supabase.from("found_item_claims")
+      .update({ status: "approved" })
+      .eq("id", claimId);
     window.location.reload();
   };
 
-  const handleReject = async (claimId, foundItemId) => {
-    const finderId = user?.id;
-    if (!claimId || !foundItemId || !finderId) {
-      alert("missing_params");
-      return;
-    }
-    const res = await fetch(`/found-item-claims/${claimId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId, status: 'rejected', finderId }),
-    });
-    const result = await res.json();
-    if (!result.success) {
-      alert(result.error || 'Failed to reject');
-      return;
-    }
+  const handleReject = async (claimId) => {
+    if (!claimId) return alert("missing claimId");
+    await supabase.from("found_item_claims")
+      .update({ status: "rejected" })
+      .eq("id", claimId);
     window.location.reload();
   };
 
@@ -59,7 +37,7 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
         const foundItemId = claim.found_item_id;
         console.log('DEBUG: claim_id:', claimId, 'found_item_id:', foundItemId, claim);
         return (
-          <div key={claimId || claim.found_item_id} className="border rounded-xl bg-white p-4 shadow-sm">
+          <div key={claim.id} className="border rounded-xl bg-white p-4 shadow-sm">
             <div className="flex flex-col md:flex-row md:justify-between gap-3">
               <div>
                 <div className="text-xs uppercase text-gray-500">Found Item</div>
@@ -85,13 +63,13 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
                 <>
                   <button
                     className="px-4 py-2 bg-green-600 text-white rounded"
-                    onClick={() => handleApprove(claimId, foundItemId)}
+                    onClick={() => handleApprove(claim.id)}
                   >
                     Approve
                   </button>
                   <button
                     className="px-4 py-2 bg-red-600 text-white rounded"
-                    onClick={() => handleReject(claimId, foundItemId)}
+                    onClick={() => handleReject(claim.id)}
                   >
                     Reject
                   </button>
