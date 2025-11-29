@@ -848,22 +848,24 @@ app.get('/found-item-claims', async (req, res) => {
 // PATCH /found-item-claims/:id
 app.patch('/found-item-claims/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
+    const claimId = Number(req.params.id) || Number(req.body?.claimId);
     const action = req.body?.action;
-    if (!id || !action) return res.status(400).json({ error: 'missing_params' });
+    const finderId = req.body?.finderId;
+    if (!claimId) return res.status(400).json({ success: false, error: 'missing claimId' });
+    if (!action || !['approved', 'rejected'].includes(action)) return res.status(400).json({ success: false, error: 'missing or invalid action' });
+    if (!finderId) return res.status(400).json({ success: false, error: 'missing finderId' });
 
-    const status = action === 'approve' ? 'approved' : 'rejected';
     const { data, error } = await supabase
       .from('found_item_claims')
-      .update({ status, acted_at: new Date().toISOString() })
-      .eq('claim_id', id)
+      .update({ status: action, acted_at: new Date().toISOString() })
+      .eq('claim_id', claimId)
       .select()
       .single();
     if (error) throw error;
 
     if (data?.found_item_id) {
       try {
-        const nextStatus = status === 'approved' ? 'claimed' : 'unclaimed';
+        const nextStatus = action === 'approved' ? 'claimed' : 'unclaimed';
         await supabase
           .from('found_items')
           .update({ status: nextStatus })
@@ -873,9 +875,9 @@ app.patch('/found-item-claims/:id', async (req, res) => {
       }
     }
 
-    res.json({ ok: true, claim: data });
+    res.json({ success: true, claim: data });
   } catch (e) {
-    res.status(500).json({ error: e.message || String(e) });
+    res.status(500).json({ success: false, error: e.message || String(e) });
   }
 });
 
