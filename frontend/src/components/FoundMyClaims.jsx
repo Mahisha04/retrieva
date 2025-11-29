@@ -41,11 +41,9 @@ export default function FoundMyClaims({ claims = [], loading = false, isFinder =
   return (
     <div className="space-y-4">
       {claims.map((claim) => {
-        console.log('CLAIM OBJECT:', claim);
-        // Detect correct property names
-        const claimId = claim.id || claim.claim_id;
-        const foundItemId = claim.found_item_id || (claim.found_item && (claim.found_item.id || claim.found_item.found_item_id));
-        const claimantId = claim.claimant_id || (claim.found_item && claim.found_item.claimant_id);
+        // Use only claim.claim_id and claim.found_item_id
+        const claimId = claim.claim_id;
+        const foundItemId = claim.found_item_id;
         return (
           <div key={claimId} className="border rounded-xl bg-white p-4 shadow-sm">
             <div className="flex flex-col md:flex-row md:justify-between gap-3">
