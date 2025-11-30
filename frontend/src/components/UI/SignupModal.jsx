@@ -115,7 +115,7 @@ export default function SignupModal({ onClose, onSignup }) {
   const handleSendOtp = async () => {
     setOtpLoading(true); setOtpError(""); setOtpSuccess("");
     try {
-      const res = await fetch("/functions/v1/send-otp", {
+      const res = await fetch("https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -151,7 +151,7 @@ export default function SignupModal({ onClose, onSignup }) {
   const handleVerifyOtp = async () => {
     setOtpLoading(true); setOtpError(""); setOtpSuccess("");
     try {
-      const res = await fetch("/functions/v1/verify-otp", {
+      const res = await fetch("https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
