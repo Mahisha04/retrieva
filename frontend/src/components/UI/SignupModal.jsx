@@ -102,19 +102,25 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpError("");
     setOtpSuccess("");
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-    });
-
-    if (error) {
-      setOtpError(error.message);
+    try {
+      const res = await fetch("https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setOtpError(data.error || "Failed to send OTP");
+        setOtpLoading(false);
+        return;
+      }
+      setOtpSent(true);
+      setOtpSuccess(data.message || "OTP sent to your email.");
+    } catch (err) {
+      setOtpError(err.message || "Network error");
+    } finally {
       setOtpLoading(false);
-      return;
     }
-
-    setOtpSent(true);
-    setOtpSuccess("OTP sent to your email.");
-    setOtpLoading(false);
   };
 
   // Verify OTP

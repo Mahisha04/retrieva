@@ -35,15 +35,24 @@ export default function EmailOtpSignup() {
   };
 
   const verifyOtp = async () => {
-    setLoading(true); setError(""); setSuccess("");
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
     try {
-      const res = await fetch("/functions/v1/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
+      const res = await fetch(
+        "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        }
+      );
+
       const data = await res.json();
+
       if (!data.success) throw new Error(data.error || "Invalid OTP");
+
       setStep("signup");
       setSuccess("OTP verified! You can now sign up.");
     } catch (e) {
