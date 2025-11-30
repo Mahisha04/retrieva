@@ -15,11 +15,14 @@ export default function EmailOtpSignup() {
   const sendOtp = async () => {
     setLoading(true); setError(""); setSuccess("");
     try {
-      const res = await fetch("/functions/v1/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(
+        "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to send OTP");
       setStep("otp");
