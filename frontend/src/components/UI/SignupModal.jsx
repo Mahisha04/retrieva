@@ -218,8 +218,3 @@ export default function SignupModal({ onClose, onSignup }) {
     </div>
   );
 }
-        </form>
-      </div>
-    </div>
-  );
-}
