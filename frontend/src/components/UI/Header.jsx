@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import LoginModal from "./LoginModal";
-// import SignupModal from "./SignupModal";
-import EmailOtpSignup from '../EmailOtpSignup';
+import SignupModal from "./SignupModal";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 
 export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, onSignup, onLogout, isAdmin = false }) {
@@ -64,7 +63,7 @@ export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, 
         />
       )}
       {showSignup && (
-          <EmailOtpSignup isOpen={showSignup} onClose={() => setShowSignup(false)} />
+        <SignupModal onClose={() => setShowSignup(false)} onSignup={onSignup} />
       )}
       {showForgot && (
         <ForgotPasswordModal
