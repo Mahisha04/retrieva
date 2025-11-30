@@ -12,17 +12,26 @@ function generateOTP() {
 serve(async (req) => {
   try {
     if (req.method !== "POST") {
-      return new Response(JSON.stringify({ success: false, error: "Method Not Allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
+      return new Response(
+        JSON.stringify({ success: false, error: "Method Not Allowed" }),
+        { status: 405, headers: { "Content-Type": "application/json" } }
+      );
     }
     let email;
     try {
       const body = await req.json();
       email = body.email;
     } catch (e) {
-      return new Response(JSON.stringify({ success: false, error: "Invalid JSON body" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid JSON body" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
     if (!email) {
-      return new Response(JSON.stringify({ success: false, error: "Email required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      return new Response(
+        JSON.stringify({ success: false, error: "Email required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const otp = generateOTP();
@@ -31,7 +40,10 @@ serve(async (req) => {
     // Store OTP
     const { error: dbError } = await supabase.from("email_otps").insert({ email, otp, expires_at: expiresAt });
     if (dbError) {
-      return new Response(JSON.stringify({ success: false, error: "Database error: " + dbError.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      return new Response(
+        JSON.stringify({ success: false, error: "Database error: " + dbError.message }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Send OTP via Resend
@@ -43,12 +55,21 @@ serve(async (req) => {
         html: `<p>Your OTP code is <b>${otp}</b>. It expires in 5 minutes.</p>`
       });
     } catch (mailError) {
-      return new Response(JSON.stringify({ success: false, error: "Failed to send email: " + (mailError.message || mailError) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to send email: " + (mailError.message || mailError) }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Always return valid JSON, never 204
-    return new Response(JSON.stringify({ success: true, message: "OTP sent" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({ success: true, message: "OTP sent" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (err) {
-    return new Response(JSON.stringify({ success: false, error: "Unexpected error: " + (err.message || err) }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 });

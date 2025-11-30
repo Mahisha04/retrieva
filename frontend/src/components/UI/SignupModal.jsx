@@ -125,22 +125,20 @@ export default function SignupModal({ onClose, onSignup }) {
       if (text) {
         try {
           data = JSON.parse(text);
-        } catch (err) {
-          throw new Error("Invalid response from server");
+        } catch {
+          setOtpError("Invalid response from server");
+          return;
         }
-      }
-      if (!res.ok) {
-        throw new Error((data && data.error) || `Failed to send OTP (${res.status})`);
-      }
-      if (data && data.success) {
-        setOtpSent(true);
-        setOtpSuccess(data.message || "OTP sent! Check your inbox.");
-      } else if (res.status === 204) {
-        setOtpSent(true);
-        setOtpSuccess("OTP sent! Check your inbox.");
       } else {
-        throw new Error((data && data.error) || "Failed to send OTP");
+        setOtpError("Empty response from server");
+        return;
       }
+      if (!res.ok || !data.success) {
+        setOtpError((data && data.error) || `Failed to send OTP (${res.status})`);
+        return;
+      }
+      setOtpSent(true);
+      setOtpSuccess(data.message || "OTP sent to your email");
     } catch (e) {
       setOtpError(e.message);
     } finally {
