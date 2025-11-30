@@ -51,7 +51,7 @@ export default function SignupModal({ onClose, onSignup }) {
     }
     try {
       setIsSubmitting(true);
-      const { data, error: signUpError } = await supabaseClient.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -72,7 +72,7 @@ export default function SignupModal({ onClose, onSignup }) {
         setError("Signup succeeded but no user record was returned.");
         return;
       }
-      const { error: profileError } = await supabaseClient.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").insert({
         id: user.id,
         first_name: firstName,
         last_name: lastName,
