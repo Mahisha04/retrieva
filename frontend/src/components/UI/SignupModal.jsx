@@ -102,75 +102,7 @@ export default function SignupModal({ onClose, onSignup }) {
   };
 
   // OTP handlers
-  const handleSendOtp = async () => {
-    setOtpLoading(true); setOtpError(""); setOtpSuccess("");
-    try {
-      const res = await fetch("/functions/v1/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const status = res.status;
-      const rawText = await res.text();
-      console.log("Send OTP raw response:", { status, rawText });
-      let data = null;
-      if (rawText) {
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          setOtpError(`Invalid response from server. Status: ${status}, Text: ${rawText}`);
-          return;
-        }
-      } else {
-        setOtpError(`Empty response from server. Status: ${status}`);
-        return;
-      }
-      if (!res.ok || !data.success) {
-        setOtpError((data && data.error) || `Failed to send OTP (${status})`);
-        return;
-      }
-      setOtpSent(true);
-      setOtpSuccess(data.message || "OTP sent to your email");
-    } catch (e) {
-      setOtpError(e.message);
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    setOtpLoading(true); setOtpError(""); setOtpSuccess("");
-    try {
-      const res = await fetch("/functions/v1/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-      let data = null;
-      const text = await res.text();
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch {
-          setOtpError("Invalid response from server");
-          return;
-        }
-      } else {
-        setOtpError("Empty response from server");
-        return;
-      }
-      if (!res.ok || !data.success) {
-        setOtpError((data && data.error) || `Failed to verify OTP (${res.status})`);
-        return;
-      }
-      setOtpVerified(true);
-      setOtpSuccess(data.message || "OTP verified! You can now sign up.");
-    } catch (e) {
-      setOtpError(e.message);
-    } finally {
-      setOtpLoading(false);
-    }
-  };
+  // Removed all OTP-related state and functions
 
   const inputClass =
     "rounded-full border-2 border-cyan-300 bg-transparent px-4 py-3 placeholder-cyan-200 text-white focus:outline-none focus:ring-2 focus:ring-cyan-200";
