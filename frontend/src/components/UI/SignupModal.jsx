@@ -60,25 +60,10 @@ export default function SignupModal({ onClose, onSignup }) {
     }
     try {
       setIsSubmitting(true);
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            firstName,
-            lastName,
-            phone
-          }
-        }
-      });
-      if (signUpError) {
-        console.error("Supabase signup failed", signUpError);
-        setError(signUpError.message || "Unable to create account right now. Please try again.");
-        return;
-      }
-      const user = data?.user;
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
       if (!user) {
-        setError("Signup succeeded but no user record was returned.");
+        setError("No user record found after OTP verification.");
         return;
       }
       const { error: profileError } = await supabase.from("profiles").insert({
@@ -113,73 +98,46 @@ export default function SignupModal({ onClose, onSignup }) {
   // OTP handlers
   // Send OTP to email
   const handleSendOtp = async () => {
-    setOtpLoading(true); setOtpError(""); setOtpSuccess("");
-    try {
-      const res = await fetch("https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const status = res.status;
-      const rawText = await res.text();
-      let data = null;
-      if (rawText) {
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          setOtpError(`Invalid response from server. Status: ${status}, Text: ${rawText}`);
-          return;
-        }
-      } else {
-        setOtpError(`Empty response from server. Status: ${status}`);
-        return;
-      }
-      if (!res.ok || !data.success) {
-        setOtpError((data && data.error) || `Failed to send OTP (${status})`);
-        return;
-      }
-      setOtpSent(true);
-      setOtpSuccess(data.message || "OTP sent to your email");
-    } catch (e) {
-      setOtpError(e.message);
-    } finally {
+    setOtpLoading(true);
+    setOtpError("");
+    setOtpSuccess("");
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+    });
+
+    if (error) {
+      setOtpError(error.message);
       setOtpLoading(false);
+      return;
     }
+
+    setOtpSent(true);
+    setOtpSuccess("OTP sent to your email.");
+    setOtpLoading(false);
   };
 
   // Verify OTP
   const handleVerifyOtp = async () => {
-    setOtpLoading(true); setOtpError(""); setOtpSuccess("");
-    try {
-      const res = await fetch("https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-      let data = null;
-      const text = await res.text();
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch {
-          setOtpError("Invalid response from server");
-          return;
-        }
-      } else {
-        setOtpError("Empty response from server");
-        return;
-      }
-      if (!res.ok || !data.success) {
-        setOtpError((data && data.error) || `Failed to verify OTP (${res.status})`);
-        return;
-      }
-      setOtpVerified(true);
-      setOtpSuccess(data.message || "OTP verified! You can now sign up.");
-    } catch (e) {
-      setOtpError(e.message);
-    } finally {
+    setOtpLoading(true);
+    setOtpError("");
+    setOtpSuccess("");
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "email",
+    });
+
+    if (error) {
+      setOtpError("Invalid OTP. Try again.");
       setOtpLoading(false);
+      return;
     }
+
+    setOtpVerified(true);
+    setOtpSuccess("OTP verified! You can now complete signup.");
+    setOtpLoading(false);
   };
 
   const inputClass =

@@ -3,8 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend";
 
 const supabase = createClient(
-  Deno.env.get("PROJECT_URL")!,
-  Deno.env.get("SERVICE_ROLE_KEY")!
+  Deno.env.get("SUPABASE_URL"),
+  Deno.env.get("SERVICE_ROLE_KEY")
 );
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
