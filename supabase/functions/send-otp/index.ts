@@ -18,7 +18,7 @@ serve(async (req) => {
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ success: false, error: "Method Not Allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } }
+        { status: 405, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
     }
 
@@ -29,14 +29,14 @@ serve(async (req) => {
     } catch {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid JSON body" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
     }
 
     if (!email) {
       return new Response(
         JSON.stringify({ success: false, error: "Email required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
     }
 
@@ -51,7 +51,7 @@ serve(async (req) => {
     if (dbError) {
       return new Response(
         JSON.stringify({ success: false, error: dbError.message }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
     }
 
@@ -66,13 +66,13 @@ serve(async (req) => {
     } catch (mailError) {
       return new Response(
         JSON.stringify({ success: false, error: "Email error: " + mailError.message }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
     }
 
     return new Response(
       JSON.stringify({ success: true, message: "OTP sent" }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
     );
 
   } catch (err) {
@@ -81,7 +81,7 @@ serve(async (req) => {
         success: false,
         error: err instanceof Error ? err.message : String(err),
       }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
     );
   }
 });
