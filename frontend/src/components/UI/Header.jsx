@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import LoginModal from "./LoginModal";
 // import SignupModal from "./SignupModal";
-import EmailOtpSignup from './components/EmailOtpSignup';
+import EmailOtpSignup from '../EmailOtpSignup';
 import ForgotPasswordModal from "./ForgotPasswordModal";
 
 export default function Header({ onOpenAdd, onSetTab, activeTab, user, onLogin, onSignup, onLogout, isAdmin = false }) {
