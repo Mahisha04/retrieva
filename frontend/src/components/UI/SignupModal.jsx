@@ -154,10 +154,25 @@ export default function SignupModal({ onClose, onSignup }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Invalid OTP");
+      let data = null;
+      const text = await res.text();
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          setOtpError("Invalid response from server");
+          return;
+        }
+      } else {
+        setOtpError("Empty response from server");
+        return;
+      }
+      if (!res.ok || !data.success) {
+        setOtpError((data && data.error) || `Failed to verify OTP (${res.status})`);
+        return;
+      }
       setOtpVerified(true);
-      setOtpSuccess("OTP verified! You can now sign up.");
+      setOtpSuccess(data.message || "OTP verified! You can now sign up.");
     } catch (e) {
       setOtpError(e.message);
     } finally {

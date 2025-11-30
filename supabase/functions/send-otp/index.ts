@@ -63,12 +63,12 @@ serve(async (req) => {
 
     // Always return valid JSON, never 204
     return new Response(
-      JSON.stringify({ success: true, message: "OTP sent" }),
+      JSON.stringify({ success: true, message: "OTP sent", otp }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ success: false, error: err.message }),
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
