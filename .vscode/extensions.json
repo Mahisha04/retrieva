@@ -1,0 +1,7 @@
+# Deno TypeScript support for VS Code
+
+{
+  "recommendations": [
+    "denoland.vscode-deno"
+  ]
+}
