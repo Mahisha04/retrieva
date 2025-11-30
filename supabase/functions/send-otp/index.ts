@@ -46,7 +46,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: false, error: "Failed to send email: " + (mailError.message || mailError) }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+    // Always return valid JSON, never 204
+    return new Response(JSON.stringify({ success: true, message: "OTP sent" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err) {
     return new Response(JSON.stringify({ success: false, error: "Unexpected error: " + (err.message || err) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
