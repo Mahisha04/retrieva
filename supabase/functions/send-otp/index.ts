@@ -2,7 +2,11 @@ import { serve } from "https://deno.land/x/sift@0.6.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend";
 
-const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
+
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
 function generateOTP() {
@@ -17,16 +21,18 @@ serve(async (req) => {
         { status: 405, headers: { "Content-Type": "application/json" } }
       );
     }
+
     let email;
     try {
       const body = await req.json();
       email = body.email;
-    } catch (e) {
+    } catch {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid JSON body" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
+
     if (!email) {
       return new Response(
         JSON.stringify({ success: false, error: "Email required" }),
@@ -37,38 +43,44 @@ serve(async (req) => {
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    // Store OTP
-    const { error: dbError } = await supabase.from("email_otps").insert({ email, otp, expires_at: expiresAt });
+    // Save OTP
+    const { error: dbError } = await supabase
+      .from("email_otps")
+      .insert({ email, otp, expires_at: expiresAt });
+
     if (dbError) {
       return new Response(
-        JSON.stringify({ success: false, error: "Database error: " + dbError.message }),
+        JSON.stringify({ success: false, error: dbError.message }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Send OTP via Resend
+    // Send email using safe sender address
     try {
       await resend.emails.send({
-        from: "no-reply@yourdomain.com",
+        from: "onboarding@resend.dev",  // ✅ Works without domain verification
         to: email,
         subject: "Your OTP Code",
-        html: `<p>Your OTP code is <b>${otp}</b>. It expires in 5 minutes.</p>`
+        html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`
       });
     } catch (mailError) {
       return new Response(
-        JSON.stringify({ success: false, error: "Failed to send email: " + (mailError.message || mailError) }),
+        JSON.stringify({ success: false, error: "Email error: " + mailError.message }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Always return valid JSON, never 204
     return new Response(
-      JSON.stringify({ success: true, message: "OTP sent", otp }),
+      JSON.stringify({ success: true, message: "OTP sent" }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
+
   } catch (err) {
     return new Response(
-      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err) }),
+      JSON.stringify({
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

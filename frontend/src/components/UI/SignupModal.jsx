@@ -120,21 +120,23 @@ export default function SignupModal({ onClose, onSignup }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      const status = res.status;
+      const rawText = await res.text();
+      console.log("Send OTP raw response:", { status, rawText });
       let data = null;
-      const text = await res.text();
-      if (text) {
+      if (rawText) {
         try {
-          data = JSON.parse(text);
+          data = JSON.parse(rawText);
         } catch {
-          setOtpError("Invalid response from server");
+          setOtpError(`Invalid response from server. Status: ${status}, Text: ${rawText}`);
           return;
         }
       } else {
-        setOtpError("Empty response from server");
+        setOtpError(`Empty response from server. Status: ${status}`);
         return;
       }
       if (!res.ok || !data.success) {
-        setOtpError((data && data.error) || `Failed to send OTP (${res.status})`);
+        setOtpError((data && data.error) || `Failed to send OTP (${status})`);
         return;
       }
       setOtpSent(true);
