@@ -59,32 +59,31 @@ export default function SignupModal({ onClose, onSignup }) {
       return;
     }
     try {
-      setIsSubmitting(true);
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      if (!user) {
-        setError("No user record found after OTP verification.");
-        return;
-      }
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: user.id,
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-        email
-      });
-      if (profileError) {
-        console.error("Failed to insert profile", profileError);
-        setError(profileError.message || "Unable to save profile details.");
-        return;
-      }
-      if (onSignup) {
-        onSignup({
-          id: user.id,
-          email: user.email,
-          name: `${firstName} ${lastName}`.trim(),
-          phone
-        });
+      setOtpLoading(true);
+      setOtpError("");
+      setOtpSuccess("");
+
+      try {
+        const res = await fetch(
+          "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, otp }),
+          }
+        );
+
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error || "Invalid OTP");
+
+        setOtpVerified(true);
+        setOtpSuccess("OTP verified!");
+
+      } catch (e) {
+        setOtpError(e.message);
+      } finally {
+        setOtpLoading(false);
       }
       onClose();
     } catch (err) {
