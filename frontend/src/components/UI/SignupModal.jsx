@@ -42,58 +42,48 @@ export default function SignupModal({ onClose, onSignup }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!otpVerified) {
-      setError("Please verify your email with OTP before signing up.");
-      return;
+  e.preventDefault();
+  setError("");
+
+  if (!otpVerified) {
+    setError("Please verify your email with OTP before signing up.");
+    return;
+  }
+
+  if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
+    setError("Please fill in all fields.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
+
+  if (passwordScore < MIN_PASSWORD_SCORE) {
+    setError("Weak password detected. Please choose a stronger password.");
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    // USER SIGNUP (you can customize)
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (signUpError) {
+      throw new Error(signUpError.message);
     }
-    if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (passwordScore < MIN_PASSWORD_SCORE) {
-      setError("Weak password detected. Please choose a stronger password.");
-      return;
-    }
-    try {
-      setOtpLoading(true);
-      setOtpError("");
-      setOtpSuccess("");
 
-      try {
-        const res = await fetch(
-          "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, otp }),
-          }
-        );
+    onClose();
+  } catch (err) {
+    setError(err.message);
+  }
 
-        const data = await res.json();
-
-        if (!data.success) throw new Error(data.error || "Invalid OTP");
-
-        setOtpVerified(true);
-        setOtpSuccess("OTP verified!");
-
-      } catch (e) {
-        setOtpError(e.message);
-      } finally {
-        setOtpLoading(false);
-      }
-      onClose();
-    } catch (err) {
-      console.error("Unexpected signup error:", err);
-      setError("Unexpected error during signup.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  setIsSubmitting(false);
   // OTP handlers
   // Send OTP to email
   const handleSendOtp = async () => {
