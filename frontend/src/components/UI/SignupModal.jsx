@@ -103,24 +103,30 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpSuccess("");
 
     try {
-      const res = await fetch("https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json();
+      const response = await fetch(
+        "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      const data = await response.json();
+
       if (!data.success) {
         setOtpError(data.error || "Failed to send OTP");
         setOtpLoading(false);
         return;
       }
+
       setOtpSent(true);
-      setOtpSuccess(data.message || "OTP sent to your email.");
+      setOtpSuccess("OTP sent to your email!");
     } catch (err) {
-      setOtpError(err.message || "Network error");
-    } finally {
-      setOtpLoading(false);
+      setOtpError("Error sending OTP");
     }
+
+    setOtpLoading(false);
   };
 
   // Verify OTP
