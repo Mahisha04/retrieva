@@ -38,17 +38,30 @@ export default function SignupModal({ onClose, onSignup }) {
     setRecommendedPasswords(ideas);
   }, [password, passwordScore]);
 
+  // Send OTP to email using Edge Function
   const handleSendOtp = async () => {
+    setOtpLoading(true);
     setOtpError("");
     setOtpSuccess("");
-    setOtpLoading(true);
     try {
-      const { error } = await supabase.auth.sendOtp({ email });
-      if (error) throw error;
+      const response = await fetch(
+        "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
+      const data = await response.json();
+      if (!data.success) {
+        setOtpError(data.error || "Failed to send OTP");
+        setOtpLoading(false);
+        return;
+      }
       setOtpSent(true);
-      setOtpSuccess("OTP sent! Please check your email.");
-    } catch (error) {
-      setOtpError(error.message);
+      setOtpSuccess("OTP sent to your email!");
+    } catch (err) {
+      setOtpError("Error sending OTP");
     }
     setOtpLoading(false);
   };
