@@ -154,29 +154,29 @@ export default function SignupModal({ onClose, onSignup }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Step 1: Email + Send OTP */}
           {!otpSent && !otpVerified && (
-            <>
+            <React.Fragment>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputClass} />
               <button type="button" className="w-full bg-teal-600 text-white p-2 rounded" onClick={handleSendOtp} disabled={otpLoading || !email}>
                 {otpLoading ? "Sending OTP..." : "Send OTP"}
               </button>
               {otpError && <div className="text-red-400 font-bold">{otpError}</div>}
               {otpSuccess && <div className="text-green-400 font-bold">{otpSuccess}</div>}
-            </>
+            </React.Fragment>
           )}
           {/* Step 2: OTP input + Verify */}
           {otpSent && !otpVerified && (
-            <>
+            <React.Fragment>
               <input type="text" className="w-full p-2 border rounded mb-2 text-black" placeholder="Enter OTP" value={otp} onChange={e => setOtp(e.target.value)} disabled={otpLoading} />
               <button type="button" className="w-full bg-teal-600 text-white p-2 rounded" onClick={handleVerifyOtp} disabled={otpLoading || !otp}>
                 {otpLoading ? "Verifying..." : "Verify OTP"}
               </button>
               {otpError && <div className="text-red-400 font-bold">{otpError}</div>}
               {otpSuccess && <div className="text-green-400 font-bold">{otpSuccess}</div>}
-            </>
+            </React.Fragment>
           )}
           {/* Step 3: Show full signup form only after OTP verified */}
           {otpVerified && (
-            <>
+            <React.Fragment>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <input type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First Name" className={inputClass} />
                 <input type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last Name" className={inputClass} />
@@ -206,7 +206,7 @@ export default function SignupModal({ onClose, onSignup }) {
                 {isSubmitting ? "Creating account..." : "Submit"}
               </button>
               <p className="text-center text-sm text-gray-200 mt-4">Have an account? <span className="text-cyan-300 underline cursor-pointer" onClick={onClose}>Click here</span></p>
-            </>
+            </React.Fragment>
           )}
         </form>
       </div>
