@@ -72,8 +72,7 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpLoading(false);
   };
 
-  // Remove stray code outside functions
-  // Ensure handleSubmit is async and contains the signup logic
+  // Restore original handleSubmit implementation
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -95,6 +94,7 @@ export default function SignupModal({ onClose, onSignup }) {
     }
     try {
       setIsSubmitting(true);
+      // USER SIGNUP (you can customize)
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
