@@ -15,12 +15,13 @@ export default function EmailOtpSignup() {
   const sendOtp = async () => {
     setLoading(true); setError(""); setSuccess("");
     try {
+      const cleanedEmail = email.trim().toLowerCase();
       const res = await fetch(
         "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: cleanedEmail }),
         }
       );
       const data = await res.json();
@@ -40,12 +41,13 @@ export default function EmailOtpSignup() {
     setSuccess("");
 
     try {
+      const cleanedEmail = email.trim().toLowerCase();
       const res = await fetch(
         "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp }),
+          body: JSON.stringify({ email: cleanedEmail, otp }),
         }
       );
 
