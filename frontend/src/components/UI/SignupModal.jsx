@@ -80,7 +80,7 @@ export default function SignupModal({ onClose, onSignup }) {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp }),
+          body: JSON.stringify({ email: email.toLowerCase(), otp }),
         }
       );
       const data = await response.json();
@@ -158,7 +158,7 @@ export default function SignupModal({ onClose, onSignup }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
-                className={inputClass}
+                className={`${inputClass} text-black`}
               />
               <button
                 type="button"
@@ -213,7 +213,7 @@ export default function SignupModal({ onClose, onSignup }) {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name"
-                  className={inputClass}
+                  className={`${inputClass} text-black`}
                 />
                 <input
                   type="text"
@@ -221,7 +221,7 @@ export default function SignupModal({ onClose, onSignup }) {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last Name"
-                  className={inputClass}
+                  className={`${inputClass} text-black`}
                 />
                 <input
                   type="email"
@@ -229,7 +229,7 @@ export default function SignupModal({ onClose, onSignup }) {
                   value={email}
                   readOnly
                   placeholder="Email"
-                  className={inputClass}
+                  className={`${inputClass} text-black`}
                 />
                 <input
                   type="tel"
@@ -237,7 +237,7 @@ export default function SignupModal({ onClose, onSignup }) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone Number"
-                  className={inputClass}
+                  className={`${inputClass} text-black`}
                 />
                 <input
                   type="password"
@@ -245,7 +245,7 @@ export default function SignupModal({ onClose, onSignup }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
-                  className={inputClass}
+                  className={`${inputClass} text-black`}
                 />
                 <div className="sm:col-span-2 space-y-3">
                   <PasswordStrengthMeter
@@ -277,7 +277,7 @@ export default function SignupModal({ onClose, onSignup }) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm Password"
-                  className={inputClass}
+                  className={`${inputClass} text-black`}
                 />
               </div>
               {/* Close grid div before error and buttons */}
