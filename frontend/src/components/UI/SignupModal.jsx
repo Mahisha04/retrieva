@@ -70,17 +70,29 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpError("");
     setOtpSuccess("");
     setOtpLoading(true);
+    // Replace Supabase Auth verifyOtp with Edge Function call
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        otp,
-        type: "signup",
-      });
-      if (error) throw error;
+      setOtpLoading(true);
+      setOtpError("");
+      setOtpSuccess("");
+      const response = await fetch(
+        "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        }
+      );
+      const data = await response.json();
+      if (!data.success) {
+        setOtpError(data.error || "Invalid OTP. Try again.");
+        setOtpLoading(false);
+        return;
+      }
       setOtpVerified(true);
-      setOtpSuccess("OTP verified! You can now complete your signup.");
-    } catch (error) {
-      setOtpError(error.message);
+      setOtpSuccess("OTP verified! You can now complete signup.");
+    } catch (err) {
+      setOtpError("Error verifying OTP");
     }
     setOtpLoading(false);
   };
