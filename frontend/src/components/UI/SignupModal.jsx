@@ -101,37 +101,63 @@ export default function SignupModal({ onClose, onSignup }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (!otpVerified) {
-      setError("Please verify your email with OTP before signing up.");
+      setError("Please verify OTP first.");
       return;
     }
+
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-    if (passwordScore < MIN_PASSWORD_SCORE) {
-      setError("Weak password detected. Please choose a stronger password.");
-      return;
-    }
+
     try {
       setIsSubmitting(true);
-      // USER SIGNUP (you can customize)
-      const { error: signUpError } = await supabase.auth.signUp({
+
+      // 1. Create Supabase user
+      const { data: authData, error: signupError } = await supabase.auth.signUp({
         email,
         password,
       });
-      if (signUpError) {
-        throw new Error(signUpError.message);
+
+      if (signupError) {
+        setError(signupError.message);
+        return;
       }
+
+      const user = authData.user;
+
+      // 2. Insert profile
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: user.id,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        email,
+      });
+
+      if (profileError) {
+        setError("Failed to save profile.");
+        return;
+      }
+
+      // 3. Success
+      if (onSignup) {
+        onSignup({ id: user.id, email: user.email });
+      }
+
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError("Unexpected error during signup.");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const inputClass =
