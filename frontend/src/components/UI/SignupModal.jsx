@@ -97,7 +97,7 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpLoading(false);
   };
 
-  // Restore original handleSubmit implementation
+  // Show error message if OTP is not verified
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -298,6 +298,11 @@ export default function SignupModal({ onClose, onSignup }) {
               >
                 {isSubmitting ? "Creating account..." : "Submit"}
               </button>
+              {error && (
+                <div className="text-red-400 text-sm text-center mt-2">
+                  {error}
+                </div>
+              )}
               <p className="text-center text-sm text-gray-200 mt-4">
                 Have an account?{" "}
                 <span
