@@ -38,31 +38,31 @@ export default function SignupModal({ onClose, onSignup }) {
     setRecommendedPasswords(generatePasswordIdeas(password));
   }, [password, passwordScore]);
 
-  // SEND OTP USING EDGE FUNCTION
+  // SEND OTP TO EMAIL
   const handleSendOtp = async () => {
     setOtpLoading(true);
     setOtpError("");
     setOtpSuccess("");
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+
       const response = await fetch(
         "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: cleanEmail }),
         }
       );
 
       const data = await response.json();
       if (!data.success) {
         setOtpError(data.error || "Failed to send OTP");
-        setOtpLoading(false);
-        return;
+      } else {
+        setOtpSent(true);
+        setOtpSuccess("OTP sent to your email!");
       }
-
-      setOtpSent(true);
-      setOtpSuccess("OTP sent to your email!");
     } catch (err) {
       setOtpError("Error sending OTP");
     }
@@ -70,32 +70,32 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpLoading(false);
   };
 
-  // VERIFY OTP USING EDGE FUNCTION (FIXED)
+  // VERIFY OTP USING EDGE FUNCTION
   const handleVerifyOtp = async () => {
     setOtpLoading(true);
     setOtpError("");
     setOtpSuccess("");
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+
       const res = await fetch(
         "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.toLowerCase(), otp }),
+          body: JSON.stringify({ email: cleanEmail, otp }),
         }
       );
 
       const data = await res.json();
 
       if (!data.success) {
-        setOtpError(data.error || "Invalid OTP");
-        setOtpLoading(false);
-        return;
+        setOtpError(data.error || "Invalid OTP.");
+      } else {
+        setOtpVerified(true);
+        setOtpSuccess("OTP verified! Continue signup.");
       }
-
-      setOtpVerified(true);
-      setOtpSuccess("OTP verified! You can now complete signup.");
     } catch (err) {
       setOtpError("Verification failed.");
     }
@@ -103,7 +103,7 @@ export default function SignupModal({ onClose, onSignup }) {
     setOtpLoading(false);
   };
 
-  // SUBMIT SIGNUP FORM
+  // SUBMIT SIGNUP
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -126,9 +126,11 @@ export default function SignupModal({ onClose, onSignup }) {
     try {
       setIsSubmitting(true);
 
-      // 1. CREATE USER IN SUPABASE AUTH
+      const cleanEmail = email.trim().toLowerCase();
+
+      // CREATE USER IN SUPABASE AUTH
       const { data: authData, error: signupError } = await supabase.auth.signUp({
-        email: email.toLowerCase(),
+        email: cleanEmail,
         password,
       });
 
@@ -139,13 +141,13 @@ export default function SignupModal({ onClose, onSignup }) {
 
       const user = authData.user;
 
-      // 2. CREATE PROFILE RECORD
+      // INSERT PROFILE
       const { error: profileError } = await supabase.from("profiles").insert({
         id: user.id,
         first_name: firstName,
         last_name: lastName,
         phone,
-        email: email.toLowerCase(),
+        email: cleanEmail,
       });
 
       if (profileError) {
@@ -153,9 +155,7 @@ export default function SignupModal({ onClose, onSignup }) {
         return;
       }
 
-      if (onSignup) {
-        onSignup({ id: user.id, email: user.email });
-      }
+      if (onSignup) onSignup({ id: user.id, email: user.email });
 
       onClose();
     } catch (err) {
@@ -169,13 +169,16 @@ export default function SignupModal({ onClose, onSignup }) {
     "w-full p-3 border rounded-md focus:ring-2 focus:ring-teal-500 focus:outline-none text-black";
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+      onClick={onClose}
+    >
       <div
         className="bg-gray-900 text-white rounded-lg shadow-lg p-6 max-w-md w-full relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button (fixed) */}
-        <button 
+        {/* CLOSE BUTTON */}
+        <button
           onClick={onClose}
           className="absolute top-3 right-3 text-white text-2xl font-bold hover:text-red-400"
         >
@@ -185,7 +188,7 @@ export default function SignupModal({ onClose, onSignup }) {
         <h2 className="text-2xl font-bold mb-4">Sign Up</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Step 1 - Email + Send OTP */}
+          {/* STEP 1: EMAIL + SEND OTP */}
           {!otpSent && !otpVerified && (
             <>
               <input
@@ -196,6 +199,7 @@ export default function SignupModal({ onClose, onSignup }) {
                 placeholder="Email"
                 className={inputClass}
               />
+
               <button
                 type="button"
                 className="w-full bg-teal-600 text-white p-2 rounded"
@@ -204,12 +208,13 @@ export default function SignupModal({ onClose, onSignup }) {
               >
                 {otpLoading ? "Sending OTP..." : "Send OTP"}
               </button>
+
               {otpError && <p className="text-red-400">{otpError}</p>}
               {otpSuccess && <p className="text-green-400">{otpSuccess}</p>}
             </>
           )}
 
-          {/* Step 2 - OTP input */}
+          {/* STEP 2: OTP INPUT */}
           {otpSent && !otpVerified && (
             <>
               <input
@@ -219,6 +224,7 @@ export default function SignupModal({ onClose, onSignup }) {
                 onChange={(e) => setOtp(e.target.value)}
                 className={inputClass}
               />
+
               <button
                 type="button"
                 className="w-full bg-teal-600 text-white p-2 rounded"
@@ -227,24 +233,34 @@ export default function SignupModal({ onClose, onSignup }) {
               >
                 {otpLoading ? "Verifying..." : "Verify OTP"}
               </button>
+
               {otpError && <p className="text-red-400">{otpError}</p>}
               {otpSuccess && <p className="text-green-400">{otpSuccess}</p>}
             </>
           )}
 
-          {/* Step 3 - Full form after OTP verified */}
+          {/* STEP 3: FULL SIGNUP FORM */}
           {otpVerified && (
             <>
               <input type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First Name" className={inputClass} />
+
               <input type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last Name" className={inputClass} />
-              <input type="email" required value={email} readOnly placeholder="Email" className={inputClass} />
+
+              <input type="email" required value={email} readOnly className={inputClass} />
+
               <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" className={inputClass} />
+
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className={inputClass} />
+
               <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className={inputClass} />
 
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+              {error && <p className="text-red-400">{error}</p>}
 
-              <button type="submit" className="w-full bg-lime-400 text-indigo-900 p-3 rounded font-bold">
+              <button
+                type="submit"
+                className="w-full bg-lime-400 text-indigo-900 p-3 rounded font-bold"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Creating account..." : "Submit"}
               </button>
             </>
