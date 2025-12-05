@@ -4,7 +4,7 @@ import PasswordStrengthMeter from "./PasswordStrengthMeter";
 import { generatePasswordIdeas } from "../../utils/passwordIdeas";
 import supabase from "../../supabaseClient";
 
-const MIN_PASSWORD_SCORE = 2; // require at least "Medium"
+const MIN_PASSWORD_SCORE = 2;
 
 export default function SignupModal({ onClose, onSignup }) {
   const [firstName, setFirstName] = useState("");
@@ -17,6 +17,7 @@ export default function SignupModal({ onClose, onSignup }) {
   const [passwordScore, setPasswordScore] = useState(0);
   const [recommendedPasswords, setRecommendedPasswords] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
@@ -34,47 +35,50 @@ export default function SignupModal({ onClose, onSignup }) {
       setRecommendedPasswords([]);
       return;
     }
-    const ideas = generatePasswordIdeas(password);
-    setRecommendedPasswords(ideas);
+    setRecommendedPasswords(generatePasswordIdeas(password));
   }, [password, passwordScore]);
 
-  // Send OTP to email using Edge Function
+  // ----------------------------------
+  // SEND OTP
+  // ----------------------------------
   const handleSendOtp = async () => {
     setOtpLoading(true);
     setOtpError("");
     setOtpSuccess("");
+
     try {
-      const response = await fetch(
+      const res = await fetch(
         "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/send-otp",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: email.toLowerCase() }),
         }
       );
-      const data = await response.json();
+
+      const data = await res.json();
       if (!data.success) {
         setOtpError(data.error || "Failed to send OTP");
-        setOtpLoading(false);
-        return;
+      } else {
+        setOtpSent(true);
+        setOtpSuccess("OTP sent to your email!");
       }
-      setOtpSent(true);
-      setOtpSuccess("OTP sent to your email!");
     } catch (err) {
       setOtpError("Error sending OTP");
     }
+
     setOtpLoading(false);
   };
 
+  // ----------------------------------
+  // VERIFY OTP
+  // ----------------------------------
   const handleVerifyOtp = async () => {
     setOtpError("");
     setOtpSuccess("");
     setOtpLoading(true);
-    // Replace Supabase Auth verifyOtp with Edge Function call
+
     try {
-      setOtpLoading(true);
-      setOtpError("");
-      setOtpSuccess("");
       const response = await fetch(
         "https://fcihpclldwuckzfwohkf.supabase.co/functions/v1/verify-otp",
         {
@@ -83,21 +87,27 @@ export default function SignupModal({ onClose, onSignup }) {
           body: JSON.stringify({ email: email.toLowerCase(), otp }),
         }
       );
+
       const data = await response.json();
+
       if (!data.success) {
-        setOtpError(data.error || "Invalid OTP. Try again.");
+        setOtpError(data.error || "Invalid OTP");
         setOtpLoading(false);
         return;
       }
+
       setOtpVerified(true);
       setOtpSuccess("OTP verified! You can now complete signup.");
     } catch (err) {
       setOtpError("Error verifying OTP");
     }
+
     setOtpLoading(false);
   };
 
-  // Show error message if OTP is not verified
+  // ----------------------------------
+  // SUBMIT SIGNUP
+  // ----------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -120,9 +130,9 @@ export default function SignupModal({ onClose, onSignup }) {
     try {
       setIsSubmitting(true);
 
-      // 1. Create Supabase user
+      // Create Supabase user
       const { data: authData, error: signupError } = await supabase.auth.signUp({
-        email,
+        email: email.toLowerCase(),
         password,
       });
 
@@ -133,13 +143,13 @@ export default function SignupModal({ onClose, onSignup }) {
 
       const user = authData.user;
 
-      // 2. Insert profile
+      // Insert profile
       const { error: profileError } = await supabase.from("profiles").insert({
         id: user.id,
         first_name: firstName,
         last_name: lastName,
         phone,
-        email,
+        email: email.toLowerCase(),
       });
 
       if (profileError) {
@@ -147,11 +157,7 @@ export default function SignupModal({ onClose, onSignup }) {
         return;
       }
 
-      // 3. Success
-      if (onSignup) {
-        onSignup({ id: user.id, email: user.email });
-      }
-
+      if (onSignup) onSignup({ id: user.id, email: user.email });
       onClose();
     } catch (err) {
       setError("Unexpected error during signup.");
@@ -161,7 +167,7 @@ export default function SignupModal({ onClose, onSignup }) {
   };
 
   const inputClass =
-    "w-full p-3 border rounded-md focus:ring-2 focus:ring-teal-500 focus:outline-none";
+    "w-full p-3 border rounded-md focus:ring-2 focus:ring-teal-500 focus:outline-none text-black";
 
   const isPasswordWeak = passwordScore < MIN_PASSWORD_SCORE;
 
@@ -169,178 +175,127 @@ export default function SignupModal({ onClose, onSignup }) {
     <div className="fixed inset-0 flex items-center justify-center z-50">
       <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 max-w-md w-full">
         <h2 className="text-2xl font-bold mb-4">Sign Up</h2>
-        <div className="mb-4">
-          <p className="text-sm text-gray-400">
-            We just need a few details to create your account.
-          </p>
-        </div>
-        <div className="space-y-4">
-          {/* Step 1: Email + Send OTP */}
-          {!otpSent && !otpVerified && (
-            <React.Fragment>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                className={`${inputClass} text-black`}
-              />
-              <button
-                type="button"
-                className="w-full bg-teal-600 text-white p-2 rounded"
-                onClick={handleSendOtp}
-                disabled={otpLoading || !email}
-              >
-                {otpLoading ? "Sending OTP..." : "Send OTP"}
-              </button>
-              {otpError && (
-                <div className="text-red-400 font-bold">{otpError}</div>
-              )}
-              {otpSuccess && (
-                <div className="text-green-400 font-bold">{otpSuccess}</div>
-              )}
-            </React.Fragment>
-          )}
-          {/* Step 2: OTP input + Verify */}
-          {otpSent && !otpVerified && (
-            <React.Fragment>
-              <input
-                type="text"
-                className="w-full p-2 border rounded mb-2 text-black"
-                placeholder="Enter OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                disabled={otpLoading}
-              />
-              <button
-                type="button"
-                className="w-full bg-teal-600 text-white p-2 rounded"
-                onClick={handleVerifyOtp}
-                disabled={otpLoading || !otp}
-              >
-                {otpLoading ? "Verifying..." : "Verify OTP"}
-              </button>
-              {otpError && (
-                <div className="text-red-400 font-bold">{otpError}</div>
-              )}
-              {otpSuccess && (
-                <div className="text-green-400 font-bold">{otpSuccess}</div>
-              )}
-            </React.Fragment>
-          )}
-          {/* Step 3: Show full signup form only after OTP verified */}
-          {otpVerified && (
-            <React.Fragment>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First Name"
-                  className={`${inputClass} text-black`}
-                />
-                <input
-                  type="text"
-                  required
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last Name"
-                  className={`${inputClass} text-black`}
-                />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  readOnly
-                  placeholder="Email"
-                  className={`${inputClass} text-black`}
-                />
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Phone Number"
-                  className={`${inputClass} text-black`}
-                />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className={`${inputClass} text-black`}
-                />
-                <div className="sm:col-span-2 space-y-3">
-                  <PasswordStrengthMeter
-                    password={password}
-                    onFeedback={handleStrengthFeedback}
-                  />
-                  {isPasswordWeak && recommendedPasswords.length > 0 && (
-                    <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100">
-                      <p className="font-semibold text-red-200">Weak password</p>
-                      <p className="text-red-100/90">
-                        Try one of these secure formats:
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {recommendedPasswords.map((idea) => (
-                          <span
-                            key={idea}
-                            className="rounded-full border border-white/30 bg-white/10 px-3 py-1 font-mono text-xs text-white"
-                          >
-                            {idea}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+
+        {/* STEP 1 — Email + Send OTP */}
+        {!otpSent && !otpVerified && (
+          <>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className={inputClass}
+            />
+
+            <button
+              className="w-full bg-teal-600 text-white p-2 rounded"
+              onClick={handleSendOtp}
+              disabled={otpLoading || !email}
+            >
+              {otpLoading ? "Sending OTP..." : "Send OTP"}
+            </button>
+
+            {otpError && <div className="text-red-400 font-bold">{otpError}</div>}
+            {otpSuccess && <div className="text-green-400 font-bold">{otpSuccess}</div>}
+          </>
+        )}
+
+        {/* STEP 2 — Enter OTP */}
+        {otpSent && !otpVerified && (
+          <>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className={inputClass}
+            />
+
+            <button
+              className="w-full bg-teal-600 text-white p-2 rounded"
+              onClick={handleVerifyOtp}
+              disabled={otpLoading || !otp}
+            >
+              {otpLoading ? "Verifying..." : "Verify OTP"}
+            </button>
+
+            {otpError && <div className="text-red-400 font-bold">{otpError}</div>}
+            {otpSuccess && <div className="text-green-400 font-bold">{otpSuccess}</div>}
+          </>
+        )}
+
+        {/* STEP 3 — Full Signup Form */}
+        {otpVerified && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First Name"
+              className={inputClass}
+            />
+
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last Name"
+              className={inputClass}
+            />
+
+            <input type="email" readOnly value={email} className={inputClass} />
+
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone Number"
+              className={inputClass}
+            />
+
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className={inputClass}
+            />
+
+            <PasswordStrengthMeter password={password} onFeedback={handleStrengthFeedback} />
+
+            {isPasswordWeak && recommendedPasswords.length > 0 && (
+              <div className="p-2 bg-red-500/10 border border-red-500/40 rounded-md text-sm">
+                <p className="font-semibold text-red-300">Weak Password</p>
+                <p className="text-red-200">Try one of these formats:</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {recommendedPasswords.map((idea) => (
+                    <span key={idea} className="bg-white/10 px-2 py-1 rounded text-xs">
+                      {idea}
+                    </span>
+                  ))}
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm Password"
-                  className={`${inputClass} text-black`}
-                />
               </div>
-              {/* Close grid div before error and buttons */}
-              {/* Error and buttons go outside the grid div but inside the fragment */}
-              {error && (
-                <div className="rounded-md bg-red-100 text-red-800 px-4 py-2 text-sm">
-                  {error}
-                </div>
-              )}
-              <button
-                type="submit"
-                disabled={isPasswordWeak || isSubmitting}
-                className={`w-full rounded-full bg-gradient-to-r from-lime-300 to-lime-500 text-indigo-900 font-semibold py-3 mt-2 shadow-lg transition ${
-                  isPasswordWeak || isSubmitting
-                    ? "opacity-60 cursor-not-allowed"
-                    : "hover:opacity-95"
-                }`}
-              >
-                {isSubmitting ? "Creating account..." : "Submit"}
-              </button>
-              {error && (
-                <div className="text-red-400 text-sm text-center mt-2">
-                  {error}
-                </div>
-              )}
-              <p className="text-center text-sm text-gray-200 mt-4">
-                Have an account?{" "}
-                <span
-                  className="text-cyan-300 underline cursor-pointer"
-                  onClick={onClose}
-                >
-                  Click here
-                </span>
-              </p>
-            </React.Fragment>
-          )}
-        </div>
+            )}
+
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm Password"
+              className={inputClass}
+            />
+
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+
+            <button
+              type="submit"
+              disabled={isPasswordWeak || isSubmitting}
+              className="w-full bg-lime-400 text-indigo-900 font-bold py-2 rounded shadow"
+            >
+              {isSubmitting ? "Creating account..." : "Submit"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
